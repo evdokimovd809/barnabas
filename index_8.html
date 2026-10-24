@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Барнабас</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@600;700&display=swap">
+<style>
+html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: one-column phone app, sticky header + bottom tab bar, full-screen sheets for details, forms and chat */
+:root{
+  --bg:#F3F4F1; --surface:#FFFFFF; --fg:#16181D; --muted:#676C74; --line:#E1E3DE;
+  --accent:#F2B705; --accent-ink:#16181D; --accent-soft:#FFF4CC;
+  --open:#2463D6; --open-bg:#E6EEFC; --booked:#16865A; --booked-bg:#E1F4EA;
+  --done:#5E646C; --done-bg:#ECEDEE; --danger:#C93C3C; --danger-bg:#FBE7E7;
+  --display:"Unbounded", "Golos Text", system-ui, sans-serif;
+  --body:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#1A1D22; --fg:#ECEDEF; --muted:#9AA0A8; --line:#2A2E35;
+  --accent:#F2B705; --accent-ink:#16181D; --accent-soft:#3A3115;
+  --open:#7FA8F5; --open-bg:#1C2A45; --booked:#5BCB98; --booked-bg:#17342A;
+  --done:#A9AEB5; --done-bg:#262A30; --danger:#F07A7A; --danger-bg:#3A1F21; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#1A1D22; --fg:#ECEDEF; --muted:#9AA0A8; --line:#2A2E35;
+  --accent:#F2B705; --accent-ink:#16181D; --accent-soft:#3A3115;
+  --open:#7FA8F5; --open-bg:#1C2A45; --booked:#5BCB98; --booked-bg:#17342A;
+  --done:#A9AEB5; --done-bg:#262A30; --danger:#F07A7A; --danger-bg:#3A1F21; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg)}
+.hdr .wrap{display:flex;align-items:center;gap:10px;padding-block:12px}
+.brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-grid;place-items:center}
+.brand i svg{width:14px;height:14px;stroke:var(--accent-ink)}
+.rolechip{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:99px}
+.hdr .sp{flex:1}
+.avatar{width:38px;height:38px;border-radius:50%;border:none;background:var(--fg);color:var(--bg);font-weight:700;display:grid;place-items:center}
+
+main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+h1{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.2;margin:8px 0 4px;text-wrap:balance}
+h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:22px 0 10px}
+.lead{color:var(--muted);margin:0 0 14px}
+.stack{display:flex;flex-direction:column;gap:10px}
+
+/* cards */
+.card{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer;position:relative}
+.card:focus-visible{outline:2px solid var(--accent)}
+.card:active{transform:scale(.99)}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cat{font-size:12.5px;font-weight:600;color:var(--muted)}
+.card-title{font-size:16.5px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.card-meta{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.card-meta b{color:var(--fg);font-weight:600}
+.card-exec{font-size:14px;border-top:1px dashed var(--line);padding-top:8px;margin-top:2px}
+.pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.s-open{color:var(--open);background:var(--open-bg)}
+.s-booked{color:var(--booked);background:var(--booked-bg)}
+.s-done{color:var(--done);background:var(--done-bg)}
+.s-cancel{color:var(--danger);background:var(--danger-bg)}
+.match{align-self:flex-start;font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--fg);padding:2px 8px;border-radius:6px}
+.badge-ok{font-size:12px;font-weight:600;color:var(--booked)}
+.badge-no{font-size:12px;font-weight:600;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:6px}
+
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:26px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--fg);font-size:16px;margin-bottom:4px}
+
+/* buttons */
+.btn{border:none;border-radius:12px;padding:14px 16px;font-weight:600;font-size:15.5px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-main{background:var(--accent);color:var(--accent-ink)}
+.btn-dark{background:var(--fg);color:var(--bg)}
+.btn-ghost{background:transparent;border:1px solid var(--line)}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger-bg)}
+.btn-danger.armed{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn:disabled{opacity:.55}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:6;width:min(528px,calc(100% - 32px));box-shadow:0 6px 20px rgba(0,0,0,.18)}
+
+/* chips & segmented */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:8px 13px;font-size:14px;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.scroller{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.scroller .chip{flex:none}
+.chip .cnt{opacity:.55;font-variant-numeric:tabular-nums;margin-left:2px}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 12px;margin:10px 0 12px}
+.search:focus-within{border-color:var(--fg)}
+.search svg{width:18px;height:18px;color:var(--muted);flex:none}
+.search input{border:none;background:none;flex:1;min-width:0;padding:12px 0;font-size:16px;outline:none}
+
+/* tabbar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:7;background:var(--surface);border-top:1px solid var(--line)}
+.tabbar .wrap{display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tab{flex:1;border:none;background:none;padding:9px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:500;color:var(--muted);position:relative}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="true"]{color:var(--fg)}
+.tab[aria-current="true"]::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+.tab .n{position:absolute;top:5px;left:calc(50% + 6px);background:var(--danger);color:#fff;font-size:10.5px;min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* sheet */
+#sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sh-hdr{position:sticky;top:0;background:var(--bg);z-index:2;border-bottom:1px solid var(--line)}
+.sh-hdr .wrap{display:flex;align-items:center;gap:8px;padding-block:10px}
+.back{border:none;background:none;display:flex;align-items:center;gap:4px;font-weight:600;padding:6px 4px;margin-left:-4px}
+.back svg{width:20px;height:20px}
+.sh-title{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;color:var(--muted);font-size:14px}
+.sh-body{padding-block:16px 32px}
+
+.info{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.row{display:flex;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.row .k{color:var(--muted);font-size:14px;width:118px;flex:none}
+.row .v{flex:1;min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.desc{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 14px}
+.note{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:14px}
+.actions{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+
+/* forms */
+form .f{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+label.l{font-size:14px;font-weight:600}
+.hint{font-size:13px;color:var(--muted)}
+input.i,textarea.i,select.i{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:16px}
+textarea.i{min-height:110px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two>*{min-width:0}
+.err{color:var(--danger);font-size:14px;font-weight:500;min-height:1px}
+.opt{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.opt input{margin-top:3px;accent-color:var(--fg)}
+
+/* stats */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.tile .num{font-family:var(--display);font-weight:600;font-size:26px;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .lbl{color:var(--muted);font-size:13px;margin-top:2px}
+.tile.hot{background:var(--accent-soft);border-color:transparent}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--done-bg);margin:6px 0 8px}
+.bar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.list-line{display:flex;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.list-line:last-child{border-bottom:none}
+.list-line .t{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* people */
+.person{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:6px}
+.person .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.person .nm{font-weight:600;font-size:16px}
+.person .ph{font-variant-numeric:tabular-nums;user-select:all}
+.small-btn{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;font-weight:600;font-size:14px;align-self:flex-start}
+
+/* chat */
+.chat{display:flex;flex-direction:column;height:100%}
+#sheet.chatmode{overflow:hidden;display:flex;flex-direction:column}
+#sheet.chatmode .sh-hdr{position:static}
+.msgs{flex:1;overflow-y:auto;padding-block:14px}
+.msgs .wrap{display:flex;flex-direction:column;gap:8px}
+.msg{max-width:82%;align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:8px 12px}
+.msg.mine{align-self:flex-end;background:var(--fg);color:var(--bg);border-color:var(--fg);border-radius:14px 14px 4px 14px}
+.msg .who{font-size:12px;font-weight:600;opacity:.7;margin-bottom:2px}
+.msg .tx{white-space:pre-wrap;overflow-wrap:anywhere}
+.msg .tm{font-size:11px;opacity:.6;text-align:right;margin-top:2px;font-variant-numeric:tabular-nums}
+.sys{align-self:center;font-size:13px;color:var(--muted);background:var(--done-bg);padding:5px 11px;border-radius:99px;text-align:center;max-width:92%}
+.composer{border-top:1px solid var(--line);background:var(--surface)}
+.composer form{display:flex;gap:8px;padding-block:10px}
+.composer textarea{flex:1;min-width:0;resize:none;height:46px;max-height:120px;min-height:46px;padding:12px 14px}
+.send{border:none;background:var(--accent);color:var(--accent-ink);border-radius:12px;width:50px;flex:none;display:grid;place-items:center}
+.send svg{width:22px;height:22px}
+.chatrow{all:unset;box-sizing:border-box;width:100%;display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer}
+.chatrow .top{display:flex;justify-content:space-between;gap:10px}
+.chatrow .ttl{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chatrow .prev{color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* register / gate */
+.gate{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-block:40px}
+.hero-mark{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:-.02em;line-height:1.05;margin-bottom:10px}
+.hero-mark span{background:var(--accent);color:var(--accent-ink);padding:0 6px;border-radius:6px}
+.rolepick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rolepick button{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:3px}
+.rolepick button b{font-size:15.5px}
+.rolepick button span{font-size:13px;color:var(--muted);line-height:1.3}
+.rolepick button[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.rolepick .full{grid-column:1/-1}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--fg);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:500;font-size:14.5px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast.bad{background:var(--danger);color:#fff}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){#sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+<div id="gate" hidden></div>
+<div id="app" hidden>
+  <header class="hdr"><div class="wrap">
+    <div class="brand"><i><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></i>Барнабас</div>
+    <span class="rolechip" id="rolechip"></span>
+    <span class="sp"></span>
+    <button class="avatar" id="avatarBtn" data-act="profile" aria-label="Профиль"></button>
+  </div></header>
+  <main><div class="wrap" id="main"></div></main>
+  <div id="fabSlot"></div>
+  <nav class="tabbar"><div class="wrap" id="tabs"></div></nav>
+</div>
+<div id="sheet" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const CATS=['Сантехник','Электрик','Мастер на час','Сборка мебели','Бытовая техника','Уборка','Отделка и ремонт','Другое'];
+const ROLE={customer:'Заказчик',executor:'Исполнитель',manager:'Менеджер'};
+const STATUS={open:['Ищем исполнителя','s-open'],booked:['Исполнитель найден','s-booked'],done:['Выполнено','s-done'],cancelled:['Отменено','s-cancel']};
+const IC={
+ list:'<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>',
+ users:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.8 2.7 2.6 3 5.2"/></svg>',
+ chat:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+ check:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>',
+ chart:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+ back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+ send:'<svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M12 5v14M5 12h14"/></svg>'
+};
+const TABS={
+ customer:[['my','Мои объявления','list'],['responses','Отклики','users'],['chats','Чаты','chat']],
+ executor:[['feed','Объявления','list'],['mine','Мои задания','check'],['chats','Чаты','chat']],
+ manager:[['stats','Обзор','chart'],['tasks','Объявления','list'],['people','Люди','users'],['chats','Чаты','chat']]
+};
+const S={db:null,auth:null,uid:null,mgrOk:false,mgrSeq:0,registering:false,unsubs:[],chatSubs:{},msgsBy:{},ready:{p:false,t:false,c:false},profiles:{},tasks:[],msgs:[],tab:null,stack:[],confirm:null,mgrFilter:'all',peopleTab:'executor',feedQ:'',feedCat:(()=>{try{return localStorage.getItem('barnabas_feedcat')||'all'}catch(e){return'all'}})(),reg:{role:null,specs:[]}};
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const toMs=(d,t)=>new Date(d+'T'+(t||'00:00')).getTime();
+function fmtDate(d){if(!d)return'—';const x=new Date(d+'T00:00');if(isNaN(x))return esc(d);const s=x.toLocaleDateString('ru-RU',{weekday:'short',day:'numeric',month:'long'});return s}
+const fmtPrice=p=>Number(p).toLocaleString('ru-RU')+' ₸';
+function fmtStamp(ms){if(!ms)return'';const d=new Date(ms),n=new Date();const hm=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});return d.toDateString()===n.toDateString()?hm:d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+', '+hm}
+const P=id=>S.profiles[id]||null;
+const nameOf=id=>(P(id)&&P(id).name)||'Без имени';
+const me=()=>P(S.uid);
+function role(){const p=me();if(!p)return null;if(p.role==='manager')return S.mgrOk?'manager':'customer';return p.role}
+const isVer=id=>!!(P(id)&&P(id).verified);
+async function keyExists(k){try{return (await S.db.collection('managerKeys').doc(k).get()).exists}catch(e){return false}}
+async function loadMgr(){const n=++S.mgrSeq;let ok=false;try{const m=await S.db.collection('managers').doc(S.uid).get();if(m.exists)ok=await keyExists(m.data().key)}catch(e){}if(n===S.mgrSeq)S.mgrOk=ok}
+async function becomeManager(pw){
+  if(!pw)throw 'Введите пароль менеджера';
+  if(pw.includes('/')||!(await keyExists(pw)))throw 'Неверный пароль менеджера';
+  await S.db.collection('managers').doc(S.uid).set({key:pw,at:Date.now()});
+  await loadMgr();
+}
+const T=id=>S.tasks.find(t=>t.id===id);
+
+function toast(text,bad){const el=$('#toast');el.textContent=text;el.className='toast'+(bad?' bad':'');el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3200)}
+
+/* ---------- boot ---------- */
+const CFG={apiKey:"AIzaSyCfobE8TgfJrwGa0mpldYxQgSmwix31JtU",authDomain:"barnabas-5f744.firebaseapp.com",projectId:"barnabas-5f744",storageBucket:"barnabas-5f744.firebasestorage.app",messagingSenderId:"143339803273",appId:"1:143339803273:web:3053bc0c1b10b34219ec58"};
+const TG=(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData)?Telegram.WebApp:null;
+function boot(){
+  if(TG){try{TG.ready();TG.expand();if(TG.colorScheme)document.documentElement.dataset.theme=TG.colorScheme;TG.BackButton.onClick(()=>{if(S.stack.length)pop()})}catch(e){}}
+  if(!window.firebase){gate('error');return}
+  firebase.initializeApp(CFG);S.db=firebase.firestore();S.auth=firebase.auth();
+  gate('loading');
+  S.auth.onAuthStateChanged(async u=>{
+    stopSubs();
+    if(!u){S.uid=null;S.authMode=S.authMode||'login';renderAuth();return}
+    S.uid=u.uid;gate('loading');await loadMgr();S.ready.c=true;startSubs();
+  });
+}
+function startSubs(){
+  S.unsubs.push(S.db.collection('profiles').onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]={id:d.id,...d.data()});S.profiles=m;S.ready.p=true;syncChats();renderAll()},onErr));
+  S.unsubs.push(S.db.collection('tasks').orderBy('createdAt','desc').limit(1000).onSnapshot(s=>{S.tasks=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.t=true;syncChats();renderAll()},onErr));
+}
+function stopSubs(){
+  S.unsubs.forEach(u=>u());S.unsubs=[];Object.values(S.chatSubs).forEach(u=>u());S.chatSubs={};S.msgsBy={};S.msgs=[];
+  S.profiles={};S.tasks=[];S.ready={p:false,t:false,c:false};S.stack=[];buildSheet();S.tab=null;S.mgrOk=false;S.mgrSeq++;
+}
+function wantedChats(){
+  const r=role();if(!r)return [];
+  if(r==='manager')return S.tasks.filter(t=>t.chatOpen).map(t=>t.id);
+  if(r==='customer')return S.tasks.filter(t=>t.customerId===S.uid&&t.chatOpen).map(t=>t.id);
+  return S.tasks.filter(t=>t.executorId===S.uid).map(t=>t.id);
+}
+function syncChats(){
+  if(!S.ready.p||!S.ready.t)return;
+  const want=new Set(wantedChats());
+  for(const id of Object.keys(S.chatSubs))if(!want.has(id)){S.chatSubs[id]();delete S.chatSubs[id];delete S.msgsBy[id]}
+  for(const id of want)if(!S.chatSubs[id]){
+    S.chatSubs[id]=S.db.collection('tasks').doc(id).collection('messages').orderBy('createdAt').limitToLast(500)
+      .onSnapshot(s=>{S.msgsBy[id]=s.docs.map(d=>({id:d.id,taskId:id,...d.data()}));flatMsgs();renderAll()},e=>{console.warn(e)});
+  }
+  flatMsgs();
+}
+function flatMsgs(){S.msgs=Object.values(S.msgsBy).flat().sort((a,b)=>(a.createdAt||0)-(b.createdAt||0))}
+function phoneDigits(ph){let d=String(ph||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);if(d.length===10)d='7'+d;return d.length>=11&&d.length<=15?d:null}
+const emailOf=d=>d+'@barnabas-users.app';
+const fmtPhone=d=>'+'+d.slice(0,d.length-10)+' '+d.slice(-10,-7)+' '+d.slice(-7,-4)+' '+d.slice(-4,-2)+' '+d.slice(-2);
+function authErr(e){const c=(e&&e.code)||'';console.warn(e);
+  if(c==='auth/email-already-in-use')return 'Этот номер уже зарегистрирован. Нажмите «Уже есть аккаунт? Войти»';
+  if(['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-login-credentials','auth/invalid-email'].includes(c))return 'Неверный номер или пароль';
+  if(c==='auth/weak-password')return 'Пароль слишком простой. Минимум 6 символов';
+  if(c==='auth/too-many-requests')return 'Слишком много попыток. Подождите пару минут';
+  if(c==='auth/network-request-failed')return 'Нет связи с интернетом';
+  if(c==='auth/operation-not-allowed')return 'Вход по паролю не включён в настройках Firebase';
+  return 'Не получилось. Попробуйте ещё раз';
+}
+const errText=e=>typeof e==='string'?e:(e&&e.code==='permission-denied')?'Нет прав на это действие.':(e&&e.code==='unavailable')?'Нет связи с интернетом. Попробуйте ещё раз.':'Не получилось сохранить. Попробуйте ещё раз.';
+function onErr(e){console.warn(e);toast(e&&e.code==='permission-denied'?'Нет доступа к данным. Проверьте правила базы в Firebase.':'Связь с базой прервалась. Обновите страницу.',true)}
+function gate(kind){
+  const g=$('#gate');g.hidden=false;$('#app').hidden=true;g.dataset.built='';
+  if(kind==='error')g.innerHTML=`<div class="wrap gate"><div class="hero-mark">Барна<span>бас</span></div><p class="lead">Не удалось загрузить приложение. Проверьте интернет и откройте снова.</p></div>`;
+  if(kind==='loading')g.innerHTML=`<div class="loading">Загружаем…</div>`;
+  if(kind==='noprofile')g.innerHTML=`<div class="wrap gate"><div class="hero-mark">Барна<span>бас</span></div><p class="lead">Профиль не найден: регистрация не завершилась. Выйдите и попробуйте снова или напишите менеджеру.</p><button class="btn btn-ghost" data-act="logout">Выйти</button></div>`;
+}
+
+/* ---------- render ---------- */
+function renderAll(){
+  if(!S.uid)return renderAuth();
+  if(S.registering||!(S.ready.p&&S.ready.t&&S.ready.c))return;
+  if(!me()){if($('#gate').dataset.built!=='np'){gate('noprofile');$('#gate').dataset.built='np'}return}
+  $('#gate').hidden=true;$('#gate').dataset.built='';$('#app').hidden=false;
+  const r=role();
+  if(!S.tab||!TABS[r].some(t=>t[0]===S.tab))S.tab=TABS[r][0][0];
+  $('#rolechip').textContent=ROLE[r];
+  $('#avatarBtn').textContent=(me().name||'?').trim().charAt(0).toUpperCase();
+  renderTabs();renderMain();refreshSheet();
+}
+function unreadCount(){return 0}
+function renderTabs(){
+  const r=role();
+  $('#tabs').innerHTML=TABS[r].map(([k,l,ic])=>{
+    let n=0;
+    if(k==='responses')n=S.tasks.filter(t=>t.customerId===S.uid&&t.status==='booked').length;
+    if(k==='mine')n=S.tasks.filter(t=>t.executorId===S.uid&&t.status==='booked').length;
+    if(k==='tasks'&&r==='manager')n=S.tasks.filter(t=>!t.checked&&t.status!=='cancelled').length;
+    return `<button class="tab" data-act="tab" data-tab="${k}" aria-current="${S.tab===k}">${IC[ic]}${l}${n?`<span class="n">${n}</span>`:''}</button>`}).join('');
+}
+function renderMain(){
+  const r=role(),m=$('#main');let h='';$('#fabSlot').innerHTML='';
+  if(r==='customer'){
+    if(S.tab==='my'){h=viewCustomerMy();$('#fabSlot').innerHTML=`<button class="btn btn-main fab" data-act="new">${IC.plus}Подать объявление</button>`}
+    if(S.tab==='responses')h=viewCustomerResponses();
+  }
+  if(r==='executor'){
+    if(S.tab==='feed'){if(!m.querySelector('#feedList'))m.innerHTML=feedSkeleton();$('#feedChips').innerHTML=feedChips();$('#feedList').innerHTML=feedList();return}
+    if(S.tab==='mine')h=viewExecMine();
+  }
+  if(r==='manager'){if(S.tab==='stats')h=viewStats();if(S.tab==='tasks')h=viewMgrTasks();if(S.tab==='people')h=viewPeople()}
+  if(S.tab==='chats')h=viewChats();
+  m.innerHTML=h;
+}
+
+function card(t,o={}){
+  const [st,sc]=STATUS[t.status]||STATUS.open;
+  const ex=t.executorId?P(t.executorId):null;
+  return `<button class="card" data-act="task" data-id="${t.id}">
+    <div class="card-top"><span class="cat">${esc(t.category)}</span><span class="pill ${sc}">${st}</span></div>
+    <div class="card-title">${esc(t.title)}</div>
+    <div class="card-meta"><span><b>${fmtDate(t.date)}</b>, ${esc(t.time)}</span>${t.price?`<span>${fmtPrice(t.price)}</span>`:''}</div>
+    ${o.match?`<span class="match">Подходит вашей специальности</span>`:''}
+    ${o.mgr&&!t.checked&&t.status!=='cancelled'?`<span class="match"><span class="dot"></span>Не проверено</span>`:''}
+    ${o.exec&&ex?`<div class="card-exec">Исполнитель: <b>${esc(ex.name)}</b>${isVer(ex.id)?' <span class="badge-ok">✓ проверен</span>':''}${t.execDate?`<br><span style="color:var(--muted)">Придёт: ${fmtDate(t.execDate)}, ${esc(t.execTime)}</span>`:''}</div>`:''}
+  </button>`;
+}
+const empty=(b,t)=>`<div class="empty"><b>${b}</b>${t}</div>`;
+
+/* customer */
+function viewCustomerMy(){
+  const mine=S.tasks.filter(t=>t.customerId===S.uid);
+  const act=mine.filter(t=>t.status==='open'||t.status==='booked'),arch=mine.filter(t=>t.status==='done'||t.status==='cancelled');
+  let h=`<h1>Мои объявления</h1><p class="lead">Нажмите на объявление, чтобы увидеть подробности.</p>`;
+  h+=act.length?`<div class="stack">${act.map(t=>card(t,{exec:true})).join('')}</div>`:empty('Пока нет объявлений','Нажмите «Подать объявление» внизу: опишите задачу, укажите адрес, дату и время.');
+  if(arch.length)h+=`<h2>Архив</h2><div class="stack">${arch.map(t=>card(t)).join('')}</div>`;
+  return h;
+}
+function viewCustomerResponses(){
+  const ts=S.tasks.filter(t=>t.customerId===S.uid&&t.status==='booked');
+  return `<h1>Отклики</h1><p class="lead">Исполнители, которые забронировали ваши задания.</p>`+(ts.length?`<div class="stack">${ts.map(t=>card(t,{exec:true})).join('')}</div>`:empty('Откликов пока нет','Как только исполнитель забронирует ваше задание, он появится здесь.'));
+}
+/* executor */
+const feedOpen=()=>S.tasks.filter(t=>t.status==='open'&&!(t.rejectedIds||[]).includes(S.uid)).sort((a,b)=>toMs(a.date,a.time)-toMs(b.date,b.time));
+function feedSkeleton(){
+  return `<h1>Объявления</h1>
+  <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="feedSearch" type="search" placeholder="Поиск: труба, розетка, шкаф…" value="${esc(S.feedQ)}" autocomplete="off" enterkeyhint="search" aria-label="Поиск по объявлениям"></div>
+  <div class="scroller" id="feedChips"></div><div id="feedList"></div>`;
+}
+function feedChips(){
+  const specs=me().specialties||[],open=feedOpen();
+  if((S.feedCat==='mine'&&!specs.length)||(S.feedCat!=='all'&&S.feedCat!=='mine'&&!CATS.includes(S.feedCat)))S.feedCat='all';
+  const opts=[['all','Все',open.length]];
+  if(specs.length)opts.push(['mine','Мои специальности',open.filter(t=>specs.includes(t.category)).length]);
+  CATS.forEach(c=>opts.push([c,c,open.filter(t=>t.category===c).length]));
+  return opts.map(([k,l,n])=>`<button class="chip" data-act="feedcat" data-c="${esc(k)}" aria-pressed="${S.feedCat===k}">${esc(l)} <span class="cnt">${n}</span></button>`).join('');
+}
+function feedList(){
+  const specs=me().specialties||[],q=S.feedQ.trim().toLowerCase();
+  let open=feedOpen();
+  if(S.feedCat==='mine')open=open.filter(t=>specs.includes(t.category));
+  else if(S.feedCat!=='all')open=open.filter(t=>t.category===S.feedCat);
+  if(q)open=open.filter(t=>(t.title+' '+(t.description||'')+' '+t.category).toLowerCase().includes(q));
+  if(S.feedCat!=='all'||q){
+    if(!open.length)return `<div class="empty"><b>Ничего не нашлось</b>Попробуйте другое слово или выберите другую категорию.<button class="btn btn-ghost" data-act="feedreset" style="margin-top:14px">Показать все объявления</button></div>`;
+    return `<h2>${S.feedCat==='all'?'Найдено':S.feedCat==='mine'?'Мои специальности':esc(S.feedCat)} · ${open.length}</h2><div class="stack">${open.map(t=>card(t)).join('')}</div>`;
+  }
+  return viewFeed(open,specs);
+}
+function viewFeed(open,specs){
+  const fit=open.filter(t=>specs.includes(t.category)),rest=open.filter(t=>!specs.includes(t.category));
+  let h=specs.length?'':`<p class="lead">Укажите специальность в профиле, и мы будем показывать подходящие задания первыми.</p>`;
+  if(!open.length)return h+empty('Свободных заданий нет','Новые объявления появятся здесь сразу, как заказчики их подадут.');
+  if(fit.length)h+=`<h2>Для вас · ${fit.length}</h2><div class="stack">${fit.map(t=>card(t,{match:true})).join('')}</div>`;
+  if(rest.length)h+=`<h2>${fit.length?'Другие объявления':'Все объявления'} · ${rest.length}</h2><div class="stack">${rest.map(t=>card(t)).join('')}</div>`;
+  return h;
+}
+function viewExecMine(){
+  const b=S.tasks.filter(t=>t.executorId===S.uid&&t.status==='booked').sort((a,b)=>toMs(a.execDate,a.execTime)-toMs(b.execDate,b.execTime));
+  const d=S.tasks.filter(t=>t.executorId===S.uid&&t.status==='done');
+  let h=`<h1>Мои задания</h1><p class="lead">Задания, которые вы забронировали.</p>`;
+  h+=b.length?`<div class="stack">${b.map(t=>card(t,{exec:true})).join('')}</div>`:empty('Нет забронированных заданий','Откройте вкладку «Объявления», выберите задание и нажмите «Забронировать».');
+  if(d.length)h+=`<h2>Выполненные</h2><div class="stack">${d.map(t=>card(t)).join('')}</div>`;
+  return h;
+}
+/* chats */
+function canChat(t){const r=role();if(!t)return false;if(r==='manager')return true;if(t.status==='cancelled')return false;return (t.customerId===S.uid&&!!t.executorId)||t.executorId===S.uid}
+function chatTasks(){
+  const r=role();let ts;
+  if(r==='manager')ts=S.tasks.filter(t=>t.chatOpen);
+  else if(r==='customer')ts=S.tasks.filter(t=>t.customerId===S.uid&&t.executorId);
+  else ts=S.tasks.filter(t=>t.executorId===S.uid);
+  const last=id=>{const ms=S.msgs.filter(m=>m.taskId===id);return ms[ms.length-1]};
+  return ts.map(t=>({t,l:last(t.id)})).sort((a,b)=>((b.l&&b.l.createdAt)||b.t.bookedAt||0)-((a.l&&a.l.createdAt)||a.t.bookedAt||0));
+}
+function viewChats(){
+  const r=role(),list=chatTasks();
+  let h=`<h1>Чаты</h1><p class="lead">${r==='manager'?'Все переписки заказчиков и исполнителей.':'Переписка по заданию. Менеджер платформы тоже видит чат.'}</p>`;
+  if(!list.length)return h+empty('Чатов пока нет',r==='executor'?'Чат с заказчиком откроется, когда вы забронируете задание.':'Чат появится, когда исполнитель забронирует задание.');
+  return h+`<div class="stack">${list.map(({t,l})=>{
+    const who=r==='customer'?nameOf(t.executorId):r==='executor'?nameOf(t.customerId):`${nameOf(t.customerId)} ↔ ${t.executorId?nameOf(t.executorId):'—'}`;
+    return `<button class="chatrow" data-act="chat" data-id="${t.id}"><div class="top"><span class="ttl">${esc(t.title)}</span><span class="t" style="color:var(--muted);font-size:13px">${l?fmtStamp(l.createdAt):''}</span></div><div style="font-size:13.5px">${esc(who)}</div><div class="prev">${l?esc((l.system?'':nameOf(l.authorId)+': ')+l.text):'Сообщений пока нет'}</div></button>`}).join('')}</div>`;
+}
+/* manager */
+function viewStats(){
+  const ps=Object.values(S.profiles),cust=ps.filter(p=>p.role==='customer').length,exe=ps.filter(p=>p.role==='executor').length;
+  const c=k=>S.tasks.filter(t=>t.status===k).length,all=S.tasks.length||1;
+  const week=Date.now()-7*864e5,newT=S.tasks.filter(t=>t.createdAt>week).length;
+  const unchecked=S.tasks.filter(t=>!t.checked&&t.status!=='cancelled').length,unver=ps.filter(p=>p.role==='executor'&&!isVer(p.id)).length;
+  const recent=S.tasks.filter(t=>t.bookedAt&&t.executorId).sort((a,b)=>b.bookedAt-a.bookedAt).slice(0,8);
+  const seg=[['open','var(--open)'],['booked','var(--booked)'],['done','var(--done)'],['cancelled','var(--danger)']];
+  return `<h1>Обзор платформы</h1><p class="lead">Всё, что происходит на платформе, в реальном времени.</p>
+  <div class="tiles">
+    <button class="tile hot" data-act="tab" data-tab="tasks" style="text-align:left;border:none"><div class="num">${unchecked}</div><div class="lbl">объявлений ждут проверки</div></button>
+    <button class="tile hot" data-act="tab" data-tab="people" style="text-align:left;border:none"><div class="num">${unver}</div><div class="lbl">исполнителей не проверены</div></button>
+    <div class="tile"><div class="num">${cust}</div><div class="lbl">заказчиков</div></div>
+    <div class="tile"><div class="num">${exe}</div><div class="lbl">исполнителей</div></div>
+    <div class="tile"><div class="num">${S.tasks.length}</div><div class="lbl">объявлений всего</div></div>
+    <div class="tile"><div class="num">${newT}</div><div class="lbl">новых за 7 дней</div></div>
+    <div class="tile"><div class="num">${S.msgs.filter(m=>!m.system).length}</div><div class="lbl">сообщений в чатах</div></div>
+    <div class="tile"><div class="num">${S.tasks.length?Math.round(c('done')/S.tasks.length*100):0}%</div><div class="lbl">заданий выполнено</div></div>
+  </div>
+  <h2>Объявления по статусам</h2>
+  <div class="bar">${S.tasks.length?seg.map(([k,col])=>`<span style="width:${c(k)/all*100}%;background:${col}"></span>`).join(''):''}</div>
+  <div class="legend">${seg.map(([k,col])=>`<span><i style="background:${col}"></i>${STATUS[k][0]}: ${c(k)}</span>`).join('')}</div>
+  <h2>Последние бронирования</h2>
+  ${recent.length?`<div class="info">${recent.map(t=>`<div class="list-line" data-act="task" data-id="${t.id}" style="cursor:pointer"><span><b>${esc(nameOf(t.executorId))}</b> → ${esc(t.title)}</span><span class="t">${fmtStamp(t.bookedAt)}</span></div>`).join('')}</div>`:empty('Бронирований пока нет','Здесь будет видно, какой исполнитель на какое задание откликнулся.')}`;
+}
+function viewMgrTasks(){
+  const F=[['all','Все'],['unchecked','Не проверены'],['open','Ищут'],['booked','Забронированы'],['done','Выполнены'],['cancelled','Отменены']];
+  let ts=S.tasks;const f=S.mgrFilter;
+  if(f==='unchecked')ts=ts.filter(t=>!t.checked&&t.status!=='cancelled');else if(f!=='all')ts=ts.filter(t=>t.status===f);
+  return `<h1>Все объявления</h1><div class="scroller">${F.map(([k,l])=>`<button class="chip" data-act="mfilter" data-f="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>`+
+   (ts.length?`<div class="stack">${ts.map(t=>card(t,{exec:true,mgr:true})).join('')}</div>`:empty('Ничего не найдено','В этом разделе пока нет объявлений.'));
+}
+function viewPeople(){
+  const k=S.peopleTab,ps=Object.values(S.profiles).filter(p=>p.role===k).sort((a,b)=>(isVer(a.id)?1:0)-(isVer(b.id)?1:0)||(b.createdAt||0)-(a.createdAt||0));
+  let h=`<h1>Пользователи</h1><div class="chips" style="margin-bottom:14px"><button class="chip" data-act="ptab" data-k="executor" aria-pressed="${k==='executor'}">Исполнители</button><button class="chip" data-act="ptab" data-k="customer" aria-pressed="${k==='customer'}">Заказчики</button></div>`;
+  if(!ps.length)return h+empty('Пока никого','Люди появятся здесь после регистрации.');
+  return h+`<div class="stack">${ps.map(p=>{
+    const n=k==='executor'?S.tasks.filter(t=>t.executorId===p.id&&t.status==='done').length:S.tasks.filter(t=>t.customerId===p.id).length;
+    return `<div class="person"><div class="top"><span class="nm">${esc(p.name)}</span>${k==='executor'?(isVer(p.id)?'<span class="badge-ok">✓ Проверен</span>':'<span class="badge-no">Не проверен</span>'):''}</div>
+    <div class="ph">${esc(p.phone||'Телефон не указан')}</div>
+    ${k==='executor'?`<div style="font-size:14px;color:var(--muted)">${esc((p.specialties||[]).join(', ')||'Специальность не указана')}</div>`:''}
+    <div style="font-size:13px;color:var(--muted)">${k==='executor'?'Выполнено заданий: ':'Объявлений: '}${n} · с ${new Date(p.createdAt||Date.now()).toLocaleDateString('ru-RU')}</div>
+    ${k==='executor'?`<button class="small-btn" data-act="verify" data-id="${p.id}">${isVer(p.id)?'Снять отметку «проверен»':'Отметить как проверенного'}</button>`:''}
+    </div>`}).join('')}</div>`;
+}
+
+/* ---------- sheets ---------- */
+function push(s){S.stack.push(s);S.confirm=null;buildSheet()}
+function pop(){S.stack.pop();S.confirm=null;buildSheet()}
+const top_=()=>S.stack[S.stack.length-1];
+function shHead(label,title){return `<div class="sh-hdr"><div class="wrap"><button class="back" data-act="back">${IC.back}${label}</button><span class="sh-title">${esc(title||'')}</span></div></div>`}
+function buildSheet(){
+  if(TG){try{S.stack.length?TG.BackButton.show():TG.BackButton.hide()}catch(e){}}
+  const el=$('#sheet'),s=top_();
+  if(!s){el.hidden=true;el.innerHTML='';el.className='';document.body.style.overflow='';return}
+  el.hidden=false;document.body.style.overflow='hidden';el.className='';
+  if(s.type==='detail')el.innerHTML=detailHTML(s.id);
+  if(s.type==='form')el.innerHTML=formHTML(s.id);
+  if(s.type==='book')el.innerHTML=bookHTML(s.id);
+  if(s.type==='profile')el.innerHTML=profileHTML();
+  if(s.type==='chat'){el.className='chatmode';el.innerHTML=chatHTML(s.id);scrollChat(true)}
+  el.scrollTop=0;
+}
+function refreshSheet(){
+  const s=top_();if(!s)return;
+  if(s.type==='detail'){const y=$('#sheet').scrollTop;$('#sheet').innerHTML=detailHTML(s.id);$('#sheet').scrollTop=y}
+  if(s.type==='chat'){const l=$('#msgList');if(l){const near=l.scrollHeight-l.scrollTop-l.clientHeight<80;l.innerHTML=msgsHTML(s.id);if(near)scrollChat(true)}}
+}
+function backLabel(){return role()==='executor'?'Ко всем объявлениям':'Назад'}
+
+function detailHTML(id){
+  const t=T(id);if(!t)return shHead('Назад')+`<div class="wrap sh-body">${empty('Объявление не найдено','Возможно, его удалили.')}</div>`;
+  const r=role(),cu=P(t.customerId),ex=t.executorId?P(t.executorId):null;
+  const isCust=t.customerId===S.uid,isExec=t.executorId===S.uid,isMgr=r==='manager';
+  const [st,sc]=STATUS[t.status]||STATUS.open;
+  const showContacts=isMgr||isExec||isCust;
+  let h=shHead(r==='executor'&&!isExec?'Ко всем объявлениям':'Назад',t.category)+`<div class="wrap sh-body">
+   <span class="pill ${sc}">${st}</span>
+   <h1 style="margin-top:12px">${esc(t.title)}</h1>
+   ${t.description?`<p class="desc">${esc(t.description)}</p>`:'<div style="height:10px"></div>'}
+   <div class="info">
+    <div class="row"><span class="k">Категория</span><span class="v">${esc(t.category)}</span></div>
+    <div class="row"><span class="k">Когда нужно</span><span class="v"><b>${fmtDate(t.date)}</b>, ${esc(t.time)}</span></div>
+    <div class="row"><span class="k">Адрес</span><span class="v">${esc(t.address)}</span></div>
+    ${t.price?`<div class="row"><span class="k">Бюджет</span><span class="v">${fmtPrice(t.price)}</span></div>`:''}
+    ${!isCust?`<div class="row"><span class="k">Заказчик</span><span class="v">${esc(cu?cu.name:'—')}${(isExec||isMgr)&&cu&&cu.phone?`<br><span style="user-select:all">${esc(cu.phone)}</span>`:''}</span></div>`:''}
+    <div class="row"><span class="k">Подано</span><span class="v">${fmtStamp(t.createdAt)}${t.editedByManager?' · исправлено менеджером':''}</span></div>
+   </div>`;
+  if(ex&&t.status!=='open'){
+    h+=`<h2>Исполнитель</h2><div class="info">
+     <div class="row"><span class="k">Имя</span><span class="v"><b>${esc(ex.name)}</b> ${isVer(ex.id)?'<span class="badge-ok">✓ проверен менеджером</span>':''}</span></div>
+     ${ex.specialties&&ex.specialties.length?`<div class="row"><span class="k">Специальность</span><span class="v">${esc(ex.specialties.join(', '))}</span></div>`:''}
+     ${showContacts&&ex.phone?`<div class="row"><span class="k">Телефон</span><span class="v" style="user-select:all">${esc(ex.phone)}</span></div>`:''}
+     <div class="row"><span class="k">Придёт</span><span class="v"><b>${fmtDate(t.execDate)}</b>, ${esc(t.execTime)}${(t.execDate!==t.date||t.execTime!==t.time)?' <span class="match">другое время</span>':''}</span></div>
+    </div>`;
+  }
+  if(r==='executor'&&t.status==='booked'&&!isExec)h+=`<p class="note" style="margin-top:14px">Это задание уже забронировал другой исполнитель.</p>`;
+  const A=[];
+  const confirmBtn=(key,label,act)=>`<button class="btn btn-danger ${S.confirm===key?'armed':''}" data-act="${act}" data-id="${t.id}">${S.confirm===key?'Нажмите ещё раз, чтобы подтвердить':label}</button>`;
+  if(r==='executor'){
+    if(t.status==='open')A.push(`<button class="btn btn-main" data-act="book" data-id="${t.id}">Забронировать</button>`);
+    if(isExec&&t.status==='booked'){A.push(`<button class="btn btn-dark" data-act="chat" data-id="${t.id}">${IC.chat}Чат с заказчиком</button>`);A.push(confirmBtn('leave'+t.id,'Отказаться от задания','leave'))}
+  }
+  if(isCust&&r==='customer'){
+    if(t.status==='booked'){A.push(`<button class="btn btn-dark" data-act="chat" data-id="${t.id}">${IC.chat}Чат с исполнителем</button>`);A.push(`<button class="btn btn-main" data-act="done" data-id="${t.id}">Работа выполнена</button>`);A.push(confirmBtn('rej'+t.id,'Отказать исполнителю','reject'))}
+    if(t.status==='open'||t.status==='booked')A.push(confirmBtn('cancel'+t.id,'Отменить объявление','cancel'));
+  }
+  if(isMgr){
+    A.push(`<button class="btn ${t.checked?'btn-ghost':'btn-main'}" data-act="check" data-id="${t.id}">${t.checked?'✓ Проверено (снять отметку)':'Отметить как проверенное'}</button>`);
+    A.push(`<button class="btn btn-ghost" data-act="edit" data-id="${t.id}">Исправить объявление</button>`);
+    if(t.chatOpen)A.push(`<button class="btn btn-dark" data-act="chat" data-id="${t.id}">${IC.chat}Открыть чат</button>`);
+    if(t.status==='booked')A.push(confirmBtn('rej'+t.id,'Отказать исполнителю','reject'));
+    if(t.status==='open'||t.status==='booked')A.push(confirmBtn('cancel'+t.id,'Снять объявление','cancel'));
+  }
+  if(A.length)h+=`<div class="actions">${A.join('')}</div>`;
+  return h+`</div>`;
+}
+
+function formHTML(id){
+  const t=id?T(id):null,v=t||{};
+  return shHead('Назад',t?'Исправить объявление':'Новое объявление')+`<div class="wrap sh-body"><h1>${t?'Исправить объявление':'Новое объявление'}</h1><p class="lead">${t?'Изменения сразу увидят заказчик и исполнители.':'Объявление сразу увидят все исполнители платформы.'}</p>
+  <form data-form="task" data-id="${id||''}" novalidate>
+   <div class="f"><label class="l">Кто нужен</label><div class="chips" id="catChips">${CATS.map(c=>`<button type="button" class="chip" data-act="pickcat" data-c="${esc(c)}" aria-pressed="${v.category===c}">${c}</button>`).join('')}</div><input type="hidden" name="category" value="${esc(v.category||'')}"></div>
+   <div class="f"><label class="l" for="f-title">Что нужно сделать</label><input class="i" id="f-title" name="title" maxlength="90" placeholder="Например: заменить трубу под раковиной" value="${esc(v.title||'')}"></div>
+   <div class="f"><label class="l" for="f-desc">Подробности</label><textarea class="i" id="f-desc" name="description" maxlength="1500" placeholder="Опишите задачу: что сломалось, какие материалы есть, этаж, есть ли лифт…">${esc(v.description||'')}</textarea></div>
+   <div class="f"><label class="l" for="f-addr">Адрес</label><input class="i" id="f-addr" name="address" maxlength="200" placeholder="Город, улица, дом, квартира" value="${esc(v.address||'')}"></div>
+   <div class="two"><div class="f"><label class="l" for="f-date">Дата</label><input class="i" type="date" id="f-date" name="date" min="${t?'':todayStr()}" value="${esc(v.date||'')}"></div>
+   <div class="f"><label class="l" for="f-time">Время</label><input class="i" type="time" id="f-time" name="time" value="${esc(v.time||'')}"></div></div>
+   <div class="f"><label class="l" for="f-price">Бюджет, ₸ <span class="hint">(необязательно)</span></label><input class="i" type="number" inputmode="numeric" id="f-price" name="price" min="0" step="500" placeholder="Например: 10000" value="${esc(v.price||'')}"></div>
+   <p class="err" id="formErr"></p>
+   <button class="btn btn-main" type="submit">${t?'Сохранить изменения':'Подать объявление'}</button>
+  </form></div>`;
+}
+function bookHTML(id){
+  const t=T(id);if(!t)return shHead('Назад');
+  return shHead('Назад',t.title)+`<div class="wrap sh-body"><h1>Бронирование</h1><p class="lead">${esc(t.title)}</p>
+  <form data-form="book" data-id="${t.id}" novalidate>
+   <label class="opt"><input type="radio" name="mode" value="theirs" id="m-theirs" checked><span><b>Время заказчика подходит</b><br><span class="hint">${fmtDate(t.date)}, ${esc(t.time)}</span></span></label>
+   <label class="opt"><input type="radio" name="mode" value="mine" id="m-mine"><span><b>Предложить своё время</b><br><span class="hint">Заказчик увидит ваше время и сможет обсудить его в чате</span></span></label>
+   <div class="two" id="ownTime" style="margin-top:6px" hidden><div class="f"><label class="l" for="b-date">Дата</label><input class="i" type="date" id="b-date" name="date" min="${todayStr()}" value="${esc(t.date)}"></div><div class="f"><label class="l" for="b-time">Время</label><input class="i" type="time" id="b-time" name="time" value="${esc(t.time)}"></div></div>
+   <p class="hint" style="margin:8px 0 14px">На одно и то же время можно забронировать только одно задание. Задания должны быть хотя бы в 2 часах друг от друга.</p>
+   <p class="err" id="formErr"></p>
+   <button class="btn btn-main" type="submit">Забронировать</button>
+  </form></div>`;
+}
+function profileHTML(){
+  const p=me(),r=role();
+  const roles=['customer','executor','manager'];
+  return shHead('Назад','Профиль')+`<div class="wrap sh-body"><h1>Профиль</h1>
+  <form data-form="profile" novalidate>
+   <div class="f"><label class="l" for="p-name">Имя</label><input class="i" id="p-name" name="name" maxlength="60" value="${esc(p.name)}"></div>
+   <div class="f"><label class="l">Телефон</label><div class="i" style="color:var(--muted)">${esc(p.phone)}</div><span class="hint">Номер телефона — ваш логин, его нельзя поменять.</span></div>
+   <div class="f"><label class="l">Роль</label><div class="chips" id="roleChips">${roles.map(k=>`<button type="button" class="chip" data-act="pickrole" data-r="${k}" aria-pressed="${r===k}">${ROLE[k]}</button>`).join('')}</div><input type="hidden" name="role" value="${r}"><span class="hint">Пока платформа в тесте, роль можно менять, чтобы попробовать всё самому.</span></div>
+   <div class="f" id="specBox" ${r==='executor'?'':'hidden'}><label class="l">Специальность</label><div class="chips" id="specChips">${CATS.map(c=>`<button type="button" class="chip" data-act="pickspec" data-c="${esc(c)}" aria-pressed="${(p.specialties||[]).includes(c)}">${c}</button>`).join('')}</div></div>
+   <div class="f" id="passBox" hidden><label class="l" for="p-pass">Пароль менеджера</label><span class="hint">Пароль выдаёт владелец платформы.</span><input class="i" type="password" id="p-pass" name="pass" autocomplete="off"></div>
+   ${p.role==='manager'&&r!=='manager'?'<p class="note">Доступ менеджера закрыт: пароль менеджера сменился. Выберите роль «Менеджер» и введите новый пароль.</p>':''}
+   <p class="err" id="formErr"></p>
+   <button class="btn btn-main" type="submit">Сохранить</button>
+  </form>
+  <form data-form="chpass" novalidate style="margin-top:28px"><h2>Сменить пароль</h2>
+   <div class="f"><label class="l" for="c-old">Текущий пароль</label><input class="i" type="password" id="c-old" name="old" autocomplete="current-password"></div>
+   <div class="f"><label class="l" for="c-new">Новый пароль</label><input class="i" type="password" id="c-new" name="nw" autocomplete="new-password" placeholder="Не короче 6 символов"></div>
+   <p class="err" id="formErr"></p><button class="btn btn-ghost" type="submit">Сменить пароль</button></form>
+  <button class="btn btn-danger" data-act="logout" style="margin-top:28px">Выйти из аккаунта</button>
+  </div>`;
+}
+function chatHTML(id){
+  const t=T(id);if(!t)return shHead('Назад');
+  const ok=canChat(t);
+  return shHead('Назад',t.title)+`<div class="msgs" id="msgList">${msgsHTML(id)}</div>
+  <div class="composer"><div class="wrap">${ok?`<form data-form="chat" data-id="${id}"><textarea class="i" id="chatInput" name="text" maxlength="1000" placeholder="Сообщение…" rows="1"></textarea><button class="send" type="submit" aria-label="Отправить">${IC.send}</button></form>`:`<p class="hint" style="padding-block:14px;text-align:center">Чат закрыт: задание отменено или передано другому исполнителю.</p>`}</div></div>`;
+}
+function msgsHTML(id){
+  const t=T(id),ms=S.msgs.filter(m=>m.taskId===id);
+  const tag=a=>a===t.customerId?'Заказчик':a===t.executorId?'Исполнитель':(P(a)&&P(a).role==='manager')?'Менеджер':'Исполнитель';
+  let h=`<div class="wrap"><div class="sys">Чат по заданию «${esc(t.title)}». Менеджер платформы видит переписку.</div>`;
+  h+=ms.map(m=>m.system?`<div class="sys">${esc(m.text)}</div>`:`<div class="msg ${m.authorId===S.uid?'mine':''}">${m.authorId===S.uid?'':`<div class="who">${esc(nameOf(m.authorId))} · ${tag(m.authorId)}</div>`}<div class="tx">${esc(m.text)}</div><div class="tm">${fmtStamp(m.createdAt)}</div></div>`).join('');
+  return h+`</div>`;
+}
+function scrollChat(){requestAnimationFrame(()=>{const l=$('#msgList');if(l)l.scrollTop=l.scrollHeight})}
+
+/* ---------- login / register ---------- */
+function renderAuth(){
+  const g=$('#gate');$('#app').hidden=true;g.hidden=false;
+  const mode=S.authMode||'login';
+  if(g.dataset.built===mode)return;g.dataset.built=mode;
+  if(mode==='login'){
+    g.innerHTML=`<div class="wrap gate"><div class="hero-mark">Барна<span>бас</span></div>
+     <p class="lead">Платформа, где заказчики находят мастеров: сантехников, электриков и других.</p>
+     <form data-form="login" novalidate>
+      <h1 style="margin-bottom:14px">Вход</h1>
+      <div class="f"><label class="l" for="l-phone">Телефон</label><input class="i" id="l-phone" name="phone" type="tel" maxlength="30" placeholder="+7 700 000 00 00" autocomplete="tel"></div>
+      <div class="f"><label class="l" for="l-pw">Пароль</label><input class="i" id="l-pw" name="pw" type="password" autocomplete="current-password"></div>
+      <p class="err" id="formErr"></p>
+      <button class="btn btn-main" type="submit">Войти</button>
+     </form>
+     <button class="btn btn-ghost" data-act="authmode" data-m="register" style="margin-top:12px">Нет аккаунта? Зарегистрироваться</button></div>`;
+    return;
+  }
+  S.reg={role:null};
+  const roles=[['customer','Я заказчик','Подаю объявления и ищу мастера'],['executor','Я исполнитель','Беру задания и выполняю их']];
+  roles.push(['manager','Я менеджер платформы','Вход только по паролю менеджера']);
+  const passHint='Пароль выдаёт владелец платформы.';
+  g.innerHTML=`<div class="wrap gate"><div class="hero-mark">Барна<span>бас</span></div>
+   <p class="lead">Платформа, где заказчики находят мастеров: сантехников, электриков и других. Зарегистрируйтесь, чтобы начать.</p>
+   <form data-form="register" novalidate>
+    <div class="f"><label class="l">Кто вы</label><div class="rolepick">${roles.map(([k,b,s],i)=>`<button type="button" class="${i===2?'full':''}" data-act="regrole" data-r="${k}" aria-pressed="false"><b>${b}</b><span>${s}</span></button>`).join('')}</div></div>
+    <div class="f"><label class="l" for="r-name">Имя</label><input class="i" id="r-name" name="name" maxlength="60" placeholder="Как к вам обращаться" autocomplete="name"></div>
+    <div class="f"><label class="l" for="r-phone">Телефон</label><input class="i" id="r-phone" name="phone" type="tel" maxlength="30" placeholder="+7 700 000 00 00" autocomplete="tel"><span class="hint">Номер телефона будет вашим логином.</span></div>
+    <div class="two"><div class="f"><label class="l" for="r-pw">Пароль</label><input class="i" id="r-pw" name="pw" type="password" autocomplete="new-password" placeholder="От 6 символов"></div>
+    <div class="f"><label class="l" for="r-pw2">Ещё раз</label><input class="i" id="r-pw2" name="pw2" type="password" autocomplete="new-password"></div></div>
+    <div class="f" id="regSpec" hidden><label class="l">Ваша специальность</label><span class="hint">Можно выбрать несколько. Подходящие объявления будем показывать первыми.</span><div class="chips">${CATS.map(c=>`<button type="button" class="chip" data-act="regspec" data-c="${esc(c)}" aria-pressed="false">${c}</button>`).join('')}</div></div>
+    <div class="f" id="regPass" hidden><label class="l" for="r-pass">Пароль менеджера</label><span class="hint">${passHint}</span><input class="i" type="password" id="r-pass" name="pass" autocomplete="off"></div>
+    <p class="err" id="formErr"></p>
+    <button class="btn btn-main" type="submit">Зарегистрироваться</button>
+   </form>
+   <button class="btn btn-ghost" data-act="authmode" data-m="login" style="margin-top:12px">Уже есть аккаунт? Войти</button></div>`;
+}
+
+/* ---------- actions ---------- */
+function armed(key){if(S.confirm===key){S.confirm=null;return true}S.confirm=key;refreshSheet();setTimeout(()=>{if(S.confirm===key){S.confirm=null;refreshSheet()}},4000);return false}
+const sysMsg=(taskId,text)=>S.db.collection('tasks').doc(taskId).collection('messages').add({authorId:S.uid,system:true,text,createdAt:Date.now()});
+async function safe(fn,ok){try{await fn();if(ok)toast(ok)}catch(e){console.warn(e);toast(errText(e),true)}}
+
+const ACT={
+  tab:el=>{S.tab=el.dataset.tab;if(top_()){S.stack=[];buildSheet()}renderTabs();renderMain();scrollTo(0,0)},
+  task:el=>push({type:'detail',id:el.dataset.id}),
+  back:()=>pop(),
+  new:()=>push({type:'form'}),
+  edit:el=>push({type:'form',id:el.dataset.id}),
+  book:el=>push({type:'book',id:el.dataset.id}),
+  chat:el=>push({type:'chat',id:el.dataset.id}),
+  profile:()=>push({type:'profile'}),
+  mfilter:el=>{S.mgrFilter=el.dataset.f;renderMain()},
+  ptab:el=>{S.peopleTab=el.dataset.k;renderMain()},
+  pickcat:el=>{el.parentNode.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===el));el.closest('form').category.value=el.dataset.c},
+  pickrole:el=>{el.parentNode.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===el));el.closest('form').role.value=el.dataset.r;$('#specBox').hidden=el.dataset.r!=='executor';$('#passBox').hidden=!(el.dataset.r==='manager'&&role()!=='manager')},
+  pickspec:el=>el.setAttribute('aria-pressed',el.getAttribute('aria-pressed')!=='true'),
+  regrole:el=>{el.parentNode.querySelectorAll('button').forEach(c=>c.setAttribute('aria-pressed',c===el));S.reg.role=el.dataset.r;$('#regSpec').hidden=el.dataset.r!=='executor';$('#regPass').hidden=el.dataset.r!=='manager'},
+  regspec:el=>el.setAttribute('aria-pressed',el.getAttribute('aria-pressed')!=='true'),
+  feedcat:el=>{S.feedCat=el.dataset.c;try{localStorage.setItem('barnabas_feedcat',S.feedCat)}catch(e){}renderMain()},
+  feedreset:()=>{S.feedCat='all';S.feedQ='';const i=$('#feedSearch');if(i)i.value='';try{localStorage.setItem('barnabas_feedcat','all')}catch(e){}renderMain()},
+  authmode:el=>{S.authMode=el.dataset.m;renderAuth();scrollTo(0,0)},
+  logout:()=>{S.authMode='login';S.auth.signOut()},
+  cancel:el=>{const id=el.dataset.id;if(!armed('cancel'+id))return;const t=T(id);safe(async()=>{await S.db.doc('tasks/'+id).update({status:'cancelled',cancelledAt:Date.now()});if(t.executorId)await sysMsg(id,role()==='manager'?'Менеджер снял объявление':'Заказчик отменил объявление')},'Объявление отменено')},
+  reject:el=>{const id=el.dataset.id;if(!armed('rej'+id))return;const t=T(id);safe(async()=>{await S.db.doc('tasks/'+id).update({status:'open',executorId:null,execDate:null,execTime:null,bookedAt:null,rejectedIds:[...(t.rejectedIds||[]),t.executorId]});await sysMsg(id,(role()==='manager'?'Менеджер':'Заказчик')+' отказался от исполнителя. Объявление снова видно всем.')},'Объявление снова доступно исполнителям')},
+  leave:el=>{const id=el.dataset.id;if(!armed('leave'+id))return;safe(async()=>{await sysMsg(id,'Исполнитель отказался от задания. Объявление снова видно всем.');await S.db.doc('tasks/'+id).update({status:'open',executorId:null,execDate:null,execTime:null,bookedAt:null});pop()},'Вы отказались от задания')},
+  done:el=>{const id=el.dataset.id;safe(async()=>{await S.db.doc('tasks/'+id).update({status:'done',doneAt:Date.now()});await sysMsg(id,'Заказчик отметил работу выполненной')},'Отлично! Задание выполнено')},
+  check:el=>{const t=T(el.dataset.id);safe(()=>S.db.doc('tasks/'+t.id).update({checked:!t.checked}),t.checked?'Отметка снята':'Объявление проверено')},
+  verify:el=>{const id=el.dataset.id,v=isVer(id);safe(()=>S.db.doc('profiles/'+id).update({verified:!v}),v?'Отметка снята':'Исполнитель проверен')},
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const f=ACT[el.dataset.act];if(f){e.preventDefault();f(el)}});
+document.addEventListener('change',e=>{if(e.target.name==='mode'){$('#ownTime').hidden=e.target.value!=='mine'}});
+document.addEventListener('keydown',e=>{if(e.target.id==='chatInput'&&e.key==='Enter'&&!e.shiftKey&&window.matchMedia('(pointer:fine)').matches){e.preventDefault();e.target.form.requestSubmit()}});
+document.addEventListener('input',e=>{if(e.target.id==='feedSearch'){S.feedQ=e.target.value;$('#feedList').innerHTML=feedList();return}if(e.target.id==='chatInput'){e.target.style.height='46px';e.target.style.height=Math.min(e.target.scrollHeight,120)+'px'}});
+
+const FORMS={
+  async login(f){
+    const d=phoneDigits(f.phone.value),pw=f.pw.value;
+    if(!d)throw 'Введите номер телефона полностью, например +7 700 123 45 67';
+    if(!pw)throw 'Введите пароль';
+    try{await S.auth.signInWithEmailAndPassword(emailOf(d),pw)}catch(e){throw authErr(e)}
+  },
+  async register(f){
+    const name=f.name.value.trim(),d=phoneDigits(f.phone.value),r=S.reg.role,pw=f.pw.value,mk=f.pass.value;
+    const specs=[...f.querySelectorAll('[data-act="regspec"][aria-pressed="true"]')].map(b=>b.dataset.c);
+    if(!r)throw 'Выберите, кто вы: заказчик или исполнитель';
+    if(!name)throw 'Укажите имя';
+    if(!d)throw 'Введите номер телефона полностью, например +7 700 123 45 67';
+    if(pw.length<6)throw 'Пароль должен быть не короче 6 символов';
+    if(pw!==f.pw2.value)throw 'Пароли не совпадают';
+    if(r==='executor'&&!specs.length)throw 'Выберите хотя бы одну специальность';
+    if(r==='manager'){if(!mk)throw 'Введите пароль менеджера';if(mk.includes('/')||!(await keyExists(mk)))throw 'Неверный пароль менеджера'}
+    S.registering=true;
+    try{
+      try{await S.auth.createUserWithEmailAndPassword(emailOf(d),pw)}catch(e){throw authErr(e)}
+      const uid=S.auth.currentUser.uid;S.uid=uid;
+      await S.db.collection('profiles').doc(uid).set({name,phone:fmtPhone(d),role:r,specialties:r==='executor'?specs:[],verified:false,createdAt:Date.now()});
+      if(r==='manager'){await S.db.collection('managers').doc(uid).set({key:mk,at:Date.now()});await loadMgr()}
+    }finally{S.registering=false}
+    S.tab=null;syncChats();renderAll();toast('Добро пожаловать, '+name+'!');
+  },
+  async chpass(f){
+    const old=f.old.value,nw=f.nw.value;
+    if(nw.length<6)throw 'Новый пароль должен быть не короче 6 символов';
+    const u=S.auth.currentUser;
+    try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,old))}catch(e){throw 'Текущий пароль неверный'}
+    try{await u.updatePassword(nw)}catch(e){throw authErr(e)}
+    f.old.value='';f.nw.value='';toast('Пароль изменён');
+  },
+  async profile(f){
+    const name=f.name.value.trim(),r=f.role.value;
+    const specs=[...f.querySelectorAll('[data-act="pickspec"][aria-pressed="true"]')].map(b=>b.dataset.c);
+    if(!name)throw 'Укажите имя';
+    if(r==='executor'&&!specs.length)throw 'Выберите хотя бы одну специальность';
+    if(r==='manager'&&role()!=='manager')await becomeManager(f.pass.value);
+    await S.db.collection('profiles').doc(S.uid).update({name,role:r,specialties:specs});
+    S.tab=null;pop();syncChats();renderAll();toast('Профиль сохранён');
+  },
+  async task(f){
+    const id=f.dataset.id,d={category:f.category.value,title:f.title.value.trim(),description:f.description.value.trim(),address:f.address.value.trim(),date:f.date.value,time:f.time.value,price:f.price.value?Number(f.price.value):null};
+    if(!d.category)throw 'Выберите, кто нужен: сантехник, электрик…';
+    if(!d.title)throw 'Напишите, что нужно сделать';
+    if(!d.address)throw 'Укажите адрес';
+    if(!d.date||!d.time)throw 'Укажите дату и время';
+    if(!id&&toMs(d.date,d.time)<Date.now())throw 'Дата и время уже прошли. Выберите время в будущем';
+    if(id){await S.db.doc('tasks/'+id).update({...d,editedByManager:role()==='manager',checked:role()==='manager'?true:T(id).checked});pop();toast('Изменения сохранены')}
+    else{await S.db.collection('tasks').add({...d,customerId:S.uid,status:'open',executorId:null,chatOpen:false,checked:false,rejectedIds:[],createdAt:Date.now()});pop();S.tab='my';renderAll();toast('Объявление опубликовано')}
+  },
+  async book(f){
+    const id=f.dataset.id,t=T(id),own=f.mode.value==='mine';
+    const date=own?f.date.value:t.date,time=own?f.time.value:t.time;
+    if(!date||!time)throw 'Укажите дату и время';
+    if(toMs(date,time)<Date.now())throw 'Это время уже прошло. Выберите другое';
+    const ms=toMs(date,time);
+    const clash=S.tasks.find(x=>x.id!==id&&x.status==='booked'&&x.executorId===S.uid&&Math.abs(toMs(x.execDate,x.execTime)-ms)<2*36e5);
+    if(clash)throw `На это время у вас уже есть задание «${clash.title}» (${fmtDate(clash.execDate)}, ${clash.execTime}). Выберите другое время.`;
+    const ref=S.db.collection('tasks').doc(id);
+    await S.db.runTransaction(async tx=>{const s=await tx.get(ref);const c=s.exists?s.data():null;if(!c||c.status!=='open'||c.executorId)throw 'Задание уже забронировал другой исполнитель.';tx.update(ref,{status:'booked',executorId:S.uid,execDate:date,execTime:time,bookedAt:Date.now(),chatOpen:true})});
+    await sysMsg(id,`${me().name} забронировал задание на ${fmtDate(date)}, ${time}`+(own&&(date!==t.date||time!==t.time)?' (предложил своё время)':''));
+    S.stack=[{type:'detail',id}];buildSheet();S.tab='mine';renderAll();toast('Задание забронировано');
+  },
+  async chat(f){
+    const text=f.text.value.trim();if(!text)return;
+    f.text.value='';f.text.style.height='46px';
+    await S.db.collection('tasks').doc(f.dataset.id).collection('messages').add({authorId:S.uid,text,createdAt:Date.now()});
+    scrollChat();f.text.focus();
+  }
+};
+document.addEventListener('submit',async e=>{
+  const f=e.target,k=f.dataset.form;if(!FORMS[k])return;e.preventDefault();
+  const btn=f.querySelector('[type=submit]'),err=f.querySelector('#formErr');if(err)err.textContent='';
+  if(btn)btn.disabled=true;
+  try{await FORMS[k](f)}catch(x){console.warn(x);const m=errText(x);if(err&&err.isConnected)err.textContent=m;else toast(m,true)}
+  finally{if(btn&&btn.isConnected)btn.disabled=false}
+});
+
+boot();
+</script>
+</body>
+</html>
