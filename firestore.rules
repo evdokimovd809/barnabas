@@ -9,12 +9,32 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/managers/$(request.auth.uid))
         && exists(/databases/$(database)/documents/managerKeys/$(get(/databases/$(database)/documents/managers/$(request.auth.uid)).data.key));
     }
-    function isExecutor() {
-      return signed() && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'executor';
-    }
+    function myProfile() { return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data; }
+    function isExecutor() { return signed() && myProfile().role == 'executor'; }
+    function notBlocked() { return signed() && myProfile().get('blocked', false) != true; }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
     function photoOk() {
       return request.resource.data.src is string && request.resource.data.src.size() < 900000;
+    }
+    function task(tid) { return get(/databases/$(database)/documents/tasks/$(tid)).data; }
+    function taskAfter(tid) { return getAfter(/databases/$(database)/documents/tasks/$(tid)).data; }
+    function isParty(t) { return t.customerId == me() || t.get('executorId', null) == me(); }
+
+    // Переходы статуса заказа, доступные заказчику
+    function custMoveOk(a, b, tid) {
+      return (a.status == b.status && a.get('executorId', null) == b.get('executorId', null))
+        // выбрать одного из предложивших — по цене из его предложения
+        || (a.status == 'open' && b.status == 'booked'
+            && b.executorId in a.offerBy
+            && !(b.executorId in a.rejectedIds)
+            && b.finalPrice == get(/databases/$(database)/documents/tasks/$(tid)/offers/$(b.executorId)).data.price)
+        // отменить
+        || (a.status in ['open', 'booked'] && b.status == 'cancelled' && b.get('executorId', null) == a.get('executorId', null))
+        // отказаться от выбранного исполнителя: он больше не сможет предложить цену
+        || (a.status == 'booked' && b.status == 'open' && b.executorId == null
+            && a.executorId in b.rejectedIds && b.rejectedIds.hasAll(a.rejectedIds))
+        // подтвердить выполнение
+        || (a.status == 'booked' && b.status == 'done' && b.executorId == a.executorId);
     }
 
     // Пароли менеджера: проверить один можно, посмотреть список нельзя
@@ -31,21 +51,26 @@ service cloud.firestore {
       allow delete: if signed() && me() == uid;
     }
 
-    // Условия дохода платформы: читают все, меняет менеджер
+    // Условия дохода платформы и служебные отметки: читают все, меняет менеджер
     match /config/{doc} {
       allow read: if signed();
       allow write: if isMgr();
     }
 
-    // Профили: каждый меняет только свой, отметку «проверен» ставит только менеджер
+    // Публичные профили. Телефонов здесь нет (они в /private).
+    // Каждый меняет только свой; «проверен» и блокировку ставит менеджер.
     match /profiles/{uid} {
       allow read: if signed();
       allow create: if signed() && me() == uid
         && request.resource.data.role in ['customer', 'executor', 'manager']
-        && request.resource.data.get('verified', false) == false;
+        && request.resource.data.get('verified', false) == false
+        && request.resource.data.get('blocked', false) == false
+        && !('phone' in request.resource.data);
+      // владелец: всё своё, кроме отметок менеджера; старый телефон можно только убрать
       allow update: if signed() && me() == uid
-        && !changed().hasAny(['verified', 'phone', 'createdAt']);
-      allow update: if isMgr() && changed().hasOnly(['verified']);
+        && !changed().hasAny(['verified', 'blocked', 'blockedAt', 'createdAt', 'mgrNote'])
+        && (!changed().hasAny(['phone']) || !('phone' in request.resource.data));
+      allow update: if isMgr() && changed().hasOnly(['verified', 'blocked', 'blockedAt', 'mgrNote', 'phone']);
       allow delete: if false;
 
       // Фото работ исполнителя
@@ -57,82 +82,148 @@ service cloud.firestore {
       }
     }
 
-    // Заказы
-    match /tasks/{taskId} {
-      allow read: if signed();
+    // Закрытые данные: телефон (логин) и Telegram. Видят владелец и менеджер.
+    match /private/{uid} {
+      allow read: if signed() && (me() == uid || isMgr());
+      allow create: if signed() && me() == uid
+        && request.resource.data.keys().hasOnly(['phone', 'tgId', 'tgUser', 'tgName', 'tgAt'])
+        && request.resource.data.phone is string;
+      allow update: if signed() && me() == uid
+        && changed().hasOnly(['tgId', 'tgUser', 'tgName', 'tgAt']);
+      allow write: if isMgr();
+    }
 
-      allow create: if signed()
+    // Заказы.
+    // Открытые видят все; остальные — стороны заказа, откликнувшиеся и менеджер.
+    match /tasks/{taskId} {
+      allow read: if signed() && (
+        resource.data.status == 'open'
+        || resource.data.customerId == me()
+        || resource.data.executorId == me()
+        || me() in resource.data.offerBy
+        || isMgr());
+
+      allow create: if notBlocked()
         && request.resource.data.customerId == me()
         && request.resource.data.status == 'open'
         && request.resource.data.executorId == null
-        && request.resource.data.get('offerBy', []).size() == 0
-        && request.resource.data.get('checked', false) == false;
+        && request.resource.data.offerBy.size() == 0
+        && request.resource.data.rejectedIds.size() == 0
+        && request.resource.data.get('checked', false) == false
+        && request.resource.data.price is number && request.resource.data.price > 0
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120;
 
       // менеджер может всё
       allow update: if isMgr();
 
-      // заказчик: выбрать исполнителя, отказать ему, отменить, отметить выполненным, оставить отзыв
+      // заказчик
       allow update: if signed() && resource.data.customerId == me()
-        && changed().hasOnly(['status', 'executorId', 'execDate', 'execTime', 'bookedAt', 'finalPrice',
-                              'rejectedIds', 'cancelledAt', 'doneAt', 'fee', 'feeMode', 'review', 'photoCount'])
+        && changed().hasOnly(['title', 'description', 'category', 'address', 'lat', 'lng', 'date', 'time', 'price', 'photoCount',
+                              'declined', 'status', 'executorId', 'execDate', 'execTime', 'bookedAt', 'finalPrice', 'stage', 'stageAt',
+                              'rejectedIds', 'cancelledAt', 'cancelReason', 'doneAt', 'fee', 'feeMode', 'review',
+                              'lastMsgAt', 'lastMsgFrom', 'customerName', 'priceUpAt'])
+        // содержание заказа меняется, только пока он ждёт предложений
+        && (resource.data.status == 'open'
+            || !changed().hasAny(['title', 'description', 'category', 'address', 'lat', 'lng', 'date', 'time', 'price', 'photoCount', 'declined']))
+        && (!changed().hasAny(['price']) || (request.resource.data.price is number && request.resource.data.price > 0))
+        // этап работы заказчик может только сбросить
+        && (!changed().hasAny(['stage']) || request.resource.data.stage == null)
+        // отзыв — только по выполненному
         && (!changed().hasAny(['review']) || request.resource.data.status == 'done')
-        && (
-          // выбрать одного из предложивших, по цене из его предложения
-          (resource.data.status == 'open' && request.resource.data.status == 'booked'
-            && request.resource.data.executorId in resource.data.get('offerBy', [])
-            && !(request.resource.data.executorId in resource.data.get('rejectedIds', []))
-            && request.resource.data.finalPrice == get(/databases/$(database)/documents/tasks/$(taskId)/offers/$(request.resource.data.executorId)).data.price)
-          ||
-          (request.resource.data.status in ['open', 'cancelled', 'done']
-            && (request.resource.data.executorId == null || request.resource.data.executorId == resource.data.executorId))
-          ||
-          (request.resource.data.status == resource.data.status
-            && request.resource.data.executorId == resource.data.executorId)
-        );
+        && custMoveOk(resource.data, request.resource.data, taskId);
 
-      // исполнитель: добавить себя в предложившие или убрать себя оттуда
-      allow update: if isExecutor() && resource.data.status == 'open'
+      // исполнитель: добавить себя в предложившие или убрать себя оттуда, пока заказ открыт
+      allow update: if isExecutor() && notBlocked() && resource.data.status == 'open'
         && changed().hasOnly(['offerBy'])
         && (
-          (request.resource.data.offerBy.hasAll(resource.data.get('offerBy', []))
-            && request.resource.data.offerBy.removeAll(resource.data.get('offerBy', [])) == [me()])
+          (request.resource.data.offerBy.hasAll(resource.data.offerBy)
+            && request.resource.data.offerBy.removeAll(resource.data.offerBy) == [me()])
           ||
-          (resource.data.get('offerBy', []).hasAll(request.resource.data.offerBy)
-            && resource.data.get('offerBy', []).removeAll(request.resource.data.offerBy) == [me()])
+          (resource.data.offerBy.hasAll(request.resource.data.offerBy)
+            && resource.data.offerBy.removeAll(request.resource.data.offerBy) == [me()])
         );
 
-      // исполнитель: отказаться от заказа, на который его выбрали
-      allow update: if signed()
-        && resource.data.executorId == me()
+      // выбранный исполнитель: этапы работы и отметка о сообщении в чате
+      allow update: if signed() && resource.data.executorId == me()
+        && resource.data.status in ['booked', 'done']
+        && changed().hasOnly(['stage', 'stageAt', 'lastMsgAt', 'lastMsgFrom'])
+        && (!changed().hasAny(['stage'])
+            || (resource.data.status == 'booked' && request.resource.data.stage in ['onway', 'started', 'finished']));
+
+      // выбранный исполнитель: отказаться от заказа
+      allow update: if signed() && resource.data.executorId == me()
+        && resource.data.status == 'booked'
         && request.resource.data.status == 'open' && request.resource.data.executorId == null
-        && request.resource.data.get('rejectedIds', []).hasAll(resource.data.get('rejectedIds', []))
-        && changed().hasOnly(['status', 'executorId', 'execDate', 'execTime', 'bookedAt', 'finalPrice', 'rejectedIds']);
+        && request.resource.data.rejectedIds.hasAll(resource.data.rejectedIds)
+        && me() in request.resource.data.rejectedIds
+        && changed().hasOnly(['status', 'executorId', 'execDate', 'execTime', 'bookedAt', 'finalPrice', 'rejectedIds', 'stage', 'stageAt']);
 
       allow delete: if false;
 
       // Фото заказа
       match /photos/{pid} {
         allow read: if signed();
-        allow create: if signed() && photoOk()
-          && (isMgr() || get(/databases/$(database)/documents/tasks/$(taskId)).data.customerId == me());
-        allow delete: if signed()
-          && (isMgr() || get(/databases/$(database)/documents/tasks/$(taskId)).data.customerId == me());
+        allow create: if signed() && photoOk() && (isMgr() || task(taskId).customerId == me());
+        allow delete: if signed() && (isMgr() || task(taskId).customerId == me());
         allow update: if false;
+      }
+
+      // Квартира, подъезд, домофон: видят заказчик, выбранный исполнитель и менеджер
+      match /secret/{sid} {
+        allow read: if signed() && (isMgr() || isParty(task(taskId)));
+        allow write: if signed() && (isMgr() || task(taskId).customerId == me());
+      }
+
+      // Чат заказа: заказчик, выбранный исполнитель и менеджер
+      match /messages/{mid} {
+        allow read: if signed() && (isMgr() || isParty(task(taskId)));
+        allow create: if signed() && request.resource.data.authorId == me()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+          && (isMgr() || (notBlocked() && isParty(task(taskId)) && task(taskId).status in ['booked', 'done']));
+        allow update, delete: if false;
       }
 
       // Предложения цены: id документа = id исполнителя.
       // Видят: сам исполнитель, заказчик этого заказа и менеджер. Другие исполнители — нет.
       match /offers/{execId} {
-        allow read: if signed() && (execId == me() || isMgr()
-          || get(/databases/$(database)/documents/tasks/$(taskId)).data.customerId == me());
-        allow create, update: if isExecutor() && execId == me()
-          && get(/databases/$(database)/documents/tasks/$(taskId)).data.status == 'open'
+        allow read: if signed() && (execId == me() || isMgr() || task(taskId).customerId == me());
+        allow create, update: if isExecutor() && notBlocked() && execId == me()
+          && task(taskId).status == 'open'
+          && !(me() in task(taskId).rejectedIds)
           && request.resource.data.executorId == me()
           && request.resource.data.price is number && request.resource.data.price > 0
           && request.resource.data.comment is string && request.resource.data.comment.size() <= 500;
-        allow delete: if signed() && execId == me()
-          && get(/databases/$(database)/documents/tasks/$(taskId)).data.status == 'open';
+        allow delete: if signed() && ((execId == me() && task(taskId).status == 'open') || isMgr());
       }
+    }
+
+    // Отзывы (id = id заказа). Документ создаётся при выполнении заказа, оценка дописывается позже.
+    match /reviews/{tid} {
+      allow read: if signed();
+      allow create: if signed()
+        && taskAfter(tid).customerId == me()
+        && taskAfter(tid).status == 'done'
+        && request.resource.data.customerId == me()
+        && request.resource.data.executorId == taskAfter(tid).executorId
+        && request.resource.data.rating is int && request.resource.data.rating >= 0 && request.resource.data.rating <= 5
+        && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+      allow update: if signed() && resource.data.customerId == me()
+        && changed().hasOnly(['rating', 'text', 'at'])
+        && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+      allow write: if isMgr();
+    }
+
+    // Журнал действий: каждый пишет только свои действия, читает только менеджер
+    match /events/{eid} {
+      allow read: if isMgr();
+      allow create: if signed()
+        && request.resource.data.actorId == me()
+        && request.resource.data.type is string && request.resource.data.type.size() <= 24
+        && request.resource.data.text is string && request.resource.data.text.size() <= 300
+        && request.resource.data.at is number;
+      allow update, delete: if false;
     }
 
     // Поддержка: у каждого пользователя один чат с менеджерами платформы

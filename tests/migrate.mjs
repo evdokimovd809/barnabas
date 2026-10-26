@@ -1,0 +1,44 @@
+// v2 -> v3: seed data shaped like the live v2 database, then sign in as v2 users and the operator.
+import puppeteer from 'puppeteer-core';
+import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { readFileSync } from 'fs';
+import { doc, setDoc } from 'firebase/firestore';
+const env = await initializeTestEnvironment({ projectId: 'demo-barnabas', firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 } });
+await env.clearFirestore();
+await fetch('http://127.0.0.1:9099/emulator/v1/projects/demo-barnabas/accounts', { method: 'DELETE' });
+const signUp = async (digits) => (await (await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-key', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: digits + '@barnabas-users.app', password: 'test123', returnSecureToken: true }) })).json()).localId;
+const cu = await signUp('77001112233'), ex = await signUp('77002223344'), mg = await signUp('77009990000');
+const now = Date.now();
+await env.withSecurityRulesDisabled(async c => { const d = c.firestore();
+  await setDoc(doc(d, 'managerKeys/secret'), {});
+  await setDoc(doc(d, 'profiles/' + cu), { name: 'Анна', phone: '+7 700 111 22 33', role: 'customer', specialties: [], experience: null, about: '', verified: false, createdAt: now - 9e8 });
+  await setDoc(doc(d, 'profiles/' + ex), { name: 'Иванов Сергей', phone: '+7 700 222 33 44', role: 'executor', specialties: ['Сантехник'], experience: 5, about: 'Опытный мастер, работаю аккуратно.', verified: true, createdAt: now - 9e8 });
+  await setDoc(doc(d, 'profiles/' + mg), { name: 'Артур', phone: '+7 700 999 00 00', role: 'manager', specialties: [], experience: null, about: '', verified: false, createdAt: now - 9e8 });
+  await setDoc(doc(d, 'managers/' + mg), { key: 'secret', at: now });
+  await setDoc(doc(d, 'tasks/old1'), { category: 'Сантехник', title: 'Старый выполненный', description: '', address: 'ул. Абая 1', date: '2026-10-01', time: '10:00', price: 8000, photoCount: 0, customerId: cu, status: 'done', executorId: ex, execDate: '2026-10-01', execTime: '10:00', finalPrice: 7000, bookedAt: now - 5e8, offerBy: [ex], rejectedIds: [], checked: true, createdAt: now - 6e8, doneAt: now - 4e8, fee: 300, feeMode: 'savings', review: { rating: 4, text: 'Хорошо', at: now - 4e8 } });
+  await setDoc(doc(d, 'tasks/old2'), { category: 'Сантехник', title: 'Старый открытый без точки', description: '', address: 'ул. Абая 2', date: new Date(now + 2 * 864e5).toISOString().slice(0, 10), time: '12:00', price: 5000, photoCount: 0, customerId: cu, status: 'open', executorId: null, offerBy: [], rejectedIds: [], checked: false, createdAt: now - 1e6 });
+});
+await env.cleanup();
+const b = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+const errors = []; let pass = 0, fail = 0; const ok = (n, c) => { if (c) pass++; else { fail++; console.log('FAIL:', n) } };
+async function login(phone, want) {
+  const p = await (await b.createBrowserContext()).newPage(); await p.setViewport({ width: 375, height: 812 });
+  p.on('pageerror', e => errors.push(e.message));
+  await p.goto('http://127.0.0.1:8766/index.html?emu=1');
+  await p.waitForFunction(() => typeof S !== 'undefined' && document.querySelector('form[data-form="login"]'));
+  await p.evaluate(ph => { const f = document.querySelector('form[data-form="login"]'); f.phone.value = ph; f.pw.value = 'test123'; f.requestSubmit(); }, phone);
+  await p.waitForFunction(w => S.ready.t && role() === w && !document.querySelector('#app').hidden, { timeout: 20000 }, want); return p;
+}
+const C = await login('+7 700 111 22 33', 'customer');
+ok('customer: phone moved to private', await C.waitForFunction(() => !me().phone && S.privs[S.uid] && S.privs[S.uid].phone === '+7 700 111 22 33', { timeout: 10000 }).then(() => true, () => false));
+ok('customer sees both orders', await C.evaluate(() => S.tasks.length === 2));
+const E = await login('+7 700 222 33 44', 'executor');
+ok('executor sees legacy open order', await E.evaluate(() => feedTasks(true).some(t => t.id === 'old2')));
+ok('executor sees own done order', await E.evaluate(() => S.tasks.some(t => t.id === 'old1' && myState(t) === 'done')));
+const M = await login('+7 700 999 00 00', 'manager');
+ok('operator migration ran', await M.waitForFunction(() => S.tasks.find(t => t.id === 'old2').customerName === 'Анна', { timeout: 15000 }).then(() => true, () => false));
+ok('operator sees phones', await M.evaluate(() => phoneOf(Object.values(S.profiles).find(p => p.name === 'Иванов Сергей').id) === '+7 700 222 33 44'));
+ok('review doc created, rating visible publicly', await E.evaluate(async () => { for (let i = 0; i < 30; i++) { const c = S.reviewsBy[S.uid]; if (c && c.list && !c.list.length) c.at = 0; const s = statsOf(S.uid); if (s && s.n === 1 && s.avg === 4) return true; await new Promise(r => setTimeout(r, 300)); } return false; }));
+ok('executor phone moved', await M.waitForFunction(() => Object.values(S.profiles).every(p => !p.phone), { timeout: 10000 }).then(() => true, () => false));
+console.log(errors.length ? 'ERRORS ' + errors.join(' | ') : 'no page errors'); console.log(`${pass} passed, ${fail} failed`);
+await b.close(); process.exit(fail ? 1 : 0);
