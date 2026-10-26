@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signed() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function isMgr() {
+      return signed()
+        && exists(/databases/$(database)/documents/managers/$(request.auth.uid))
+        && exists(/databases/$(database)/documents/managerKeys/$(get(/databases/$(database)/documents/managers/$(request.auth.uid)).data.key));
+    }
+    function isExecutor() {
+      return signed() && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'executor';
+    }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function photoOk() {
+      return request.resource.data.src is string && request.resource.data.src.size() < 900000;
+    }
+
+    // Пароли менеджера: проверить один можно, посмотреть список нельзя
+    match /managerKeys/{key} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    // Кто вошёл как менеджер (только с правильным паролем)
+    match /managers/{uid} {
+      allow get: if signed() && me() == uid;
+      allow create, update: if signed() && me() == uid
+        && exists(/databases/$(database)/documents/managerKeys/$(request.resource.data.key));
+      allow delete: if signed() && me() == uid;
+    }
+
+    // Условия дохода платформы: читают все, меняет менеджер
+    match /config/{doc} {
+      allow read: if signed();
+      allow write: if isMgr();
+    }
+
+    // Профили: каждый меняет только свой, отметку «проверен» ставит только менеджер
+    match /profiles/{uid} {
+      allow read: if signed();
+      allow create: if signed() && me() == uid
+        && request.resource.data.role in ['customer', 'executor', 'manager']
+        && request.resource.data.get('verified', false) == false;
+      allow update: if signed() && me() == uid
+        && !changed().hasAny(['verified', 'phone', 'createdAt']);
+      allow update: if isMgr() && changed().hasOnly(['verified']);
+      allow delete: if false;
+
+      // Фото работ исполнителя
+      match /works/{wid} {
+        allow read: if signed();
+        allow create: if signed() && me() == uid && photoOk();
+        allow delete: if signed() && (me() == uid || isMgr());
+        allow update: if false;
+      }
+    }
+
+    // Заказы
+    match /tasks/{taskId} {
+      allow read: if signed();
+
+      allow create: if signed()
+        && request.resource.data.customerId == me()
+        && request.resource.data.status == 'open'
+        && request.resource.data.executorId == null
+        && request.resource.data.get('offerBy', []).size() == 0
+        && request.resource.data.get('checked', false) == false;
+
+      // менеджер может всё
+      allow update: if isMgr();
+
+      // заказчик: выбрать исполнителя, отказать ему, отменить, отметить выполненным, оставить отзыв
+      allow update: if signed() && resource.data.customerId == me()
+        && changed().hasOnly(['status', 'executorId', 'execDate', 'execTime', 'bookedAt', 'finalPrice',
+                              'rejectedIds', 'cancelledAt', 'doneAt', 'fee', 'feeMode', 'review', 'photoCount'])
+        && (!changed().hasAny(['review']) || request.resource.data.status == 'done')
+        && (
+          // выбрать одного из предложивших, по цене из его предложения
+          (resource.data.status == 'open' && request.resource.data.status == 'booked'
+            && request.resource.data.executorId in resource.data.get('offerBy', [])
+            && !(request.resource.data.executorId in resource.data.get('rejectedIds', []))
+            && request.resource.data.finalPrice == get(/databases/$(database)/documents/tasks/$(taskId)/offers/$(request.resource.data.executorId)).data.price)
+          ||
+          (request.resource.data.status in ['open', 'cancelled', 'done']
+            && (request.resource.data.executorId == null || request.resource.data.executorId == resource.data.executorId))
+          ||
+          (request.resource.data.status == resource.data.status
+            && request.resource.data.executorId == resource.data.executorId)
+        );
+
+      // исполнитель: добавить себя в предложившие или убрать себя оттуда
+      allow update: if isExecutor() && resource.data.status == 'open'
+        && changed().hasOnly(['offerBy'])
+        && (
+          (request.resource.data.offerBy.hasAll(resource.data.get('offerBy', []))
+            && request.resource.data.offerBy.removeAll(resource.data.get('offerBy', [])) == [me()])
+          ||
+          (resource.data.get('offerBy', []).hasAll(request.resource.data.offerBy)
+            && resource.data.get('offerBy', []).removeAll(request.resource.data.offerBy) == [me()])
+        );
+
+      // исполнитель: отказаться от заказа, на который его выбрали
+      allow update: if signed()
+        && resource.data.executorId == me()
+        && request.resource.data.status == 'open' && request.resource.data.executorId == null
+        && request.resource.data.get('rejectedIds', []).hasAll(resource.data.get('rejectedIds', []))
+        && changed().hasOnly(['status', 'executorId', 'execDate', 'execTime', 'bookedAt', 'finalPrice', 'rejectedIds']);
+
+      allow delete: if false;
+
+      // Фото заказа
+      match /photos/{pid} {
+        allow read: if signed();
+        allow create: if signed() && photoOk()
+          && (isMgr() || get(/databases/$(database)/documents/tasks/$(taskId)).data.customerId == me());
+        allow delete: if signed()
+          && (isMgr() || get(/databases/$(database)/documents/tasks/$(taskId)).data.customerId == me());
+        allow update: if false;
+      }
+
+      // Предложения цены: id документа = id исполнителя.
+      // Видят: сам исполнитель, заказчик этого заказа и менеджер. Другие исполнители — нет.
+      match /offers/{execId} {
+        allow read: if signed() && (execId == me() || isMgr()
+          || get(/databases/$(database)/documents/tasks/$(taskId)).data.customerId == me());
+        allow create, update: if isExecutor() && execId == me()
+          && get(/databases/$(database)/documents/tasks/$(taskId)).data.status == 'open'
+          && request.resource.data.executorId == me()
+          && request.resource.data.price is number && request.resource.data.price > 0
+          && request.resource.data.comment is string && request.resource.data.comment.size() <= 500;
+        allow delete: if signed() && execId == me()
+          && get(/databases/$(database)/documents/tasks/$(taskId)).data.status == 'open';
+      }
+    }
+
+    // Поддержка: у каждого пользователя один чат с менеджерами платформы
+    match /support/{uid} {
+      allow read: if signed() && (me() == uid || isMgr());
+      allow create, update: if signed() && (me() == uid || isMgr())
+        && request.resource.data.lastFrom == me();
+      allow delete: if false;
+
+      match /messages/{msgId} {
+        allow read: if signed() && (me() == uid || isMgr());
+        allow create: if signed() && (me() == uid || isMgr())
+          && request.resource.data.authorId == me()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 1000;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
