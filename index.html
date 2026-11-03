@@ -480,12 +480,7 @@ const verBadge=id=>isVer(id)?' <span class="badge-ok">✓ проверен</span
 const phoneOf=id=>(S.privs[id]&&S.privs[id].phone)||(P(id)&&P(id).phone)||'';
 async function keyExists(k){try{return (await S.db.collection('managerKeys').doc(k).get()).exists}catch(e){return false}}
 async function loadMgr(){const n=++S.mgrSeq;let ok=false;try{const m=await S.db.collection('managers').doc(S.uid).get();if(m.exists)ok=await keyExists(m.data().key)}catch(e){}if(n===S.mgrSeq)S.mgrOk=ok}
-async function becomeManager(pw){
-  if(!pw)throw 'Введите пароль оператора';
-  if(pw.includes('/')||!(await keyExists(pw)))throw 'Неверный пароль оператора';
-  await S.db.collection('managers').doc(S.uid).set({key:pw,at:Date.now()});
-  await loadMgr();
-}
+/* операторов заводят только в веб-панели: /console/ */
 
 /* ---------- money, offers, ratings ---------- */
 const finalOf=t=>t.finalPrice??t.price??null;
@@ -1454,14 +1449,14 @@ function worksHTML(){
   return `<div class="photos">${ps.map(p=>`<div class="ph"><button type="button" data-act="zoom" data-path="${esc(path)}" data-pid="${esc(p.id)}" aria-label="Открыть фото"><img src="${esc(p.src)}" alt="" loading="lazy"></button><button type="button" class="ph-x" data-act="delwork" data-pid="${esc(p.id)}" aria-label="Удалить фото">×</button></div>`).join('')}${ps.length<MAXPH.works?addTile('works'):''}</div>`;
 }
 function profileHTML(){
-  const p=me(),r=role(),ex=r==='executor',roles=['customer','executor','manager'],pv=S.privs[S.uid]||{},st=ex?statsOf(S.uid):null;
+  const p=me(),r=role(),ex=r==='executor',roles=['customer','executor'],pv=S.privs[S.uid]||{},st=ex?statsOf(S.uid):null;
   S.pick=p.geo||null;const rad=p.radiusKm==null?10:p.radiusKm;
   return shHead('Назад','Профиль')+`<div class="wrap sh-body"><h1>Профиль</h1>
   ${ex?`<p class="lead">${rateHTML(S.uid)}${verBadge(S.uid)} · выполнено: ${st?st.done:'…'}</p>`:''}
   <form data-form="profile" novalidate>
    <div class="f"><label class="l" for="p-name" id="p-name-l">${ex?'ФИО':'Имя'}</label><input class="i" id="p-name" name="name" maxlength="80" value="${esc(p.name)}"></div>
    <div class="f"><label class="l">Телефон</label><div class="i" style="color:var(--muted)">${esc(pv.phone||p.phone||'—')}</div><span class="hint">Номер телефона — ваш логин. Другим пользователям он не показывается.${pv.tgId?` Telegram подключён${pv.tgUser?': @'+esc(pv.tgUser):''}.`:''}</span></div>
-   <div class="f"><label class="l">Роль</label><div class="chips" id="roleChips">${roles.map(k=>`<button type="button" class="chip" data-act="pickrole" data-r="${k}" aria-pressed="${r===k}">${ROLE[k]}</button>`).join('')}</div><input type="hidden" name="role" value="${r}"><span class="hint">Пока платформа в тесте, роль можно менять, чтобы попробовать всё самому.</span></div>
+   <div class="f"><label class="l">Роль</label>${r==='manager'?'<div class="i" style="color:var(--muted)">Оператор платформы</div>':`<div class="chips" id="roleChips">${roles.map(k=>`<button type="button" class="chip" data-act="pickrole" data-r="${k}" aria-pressed="${r===k}">${ROLE[k]}</button>`).join('')}</div>`}<input type="hidden" name="role" value="${r}"><span class="hint">${r==='manager'?'Доступ оператора и управление платформой — в веб-панели оператора.':'Пока платформа в тесте, роль можно менять, чтобы попробовать всё самому.'}</span></div>
    <div id="execBox" ${ex?'':'hidden'}>
     <div class="f"><label class="l">Специальность</label><div class="chips">${CATS.map(c=>`<button type="button" class="chip" data-act="pickspec" data-c="${esc(c)}" aria-pressed="${(p.specialties||[]).includes(c)}">${c}</button>`).join('')}</div></div>
     <div class="f"><label class="l" for="p-exp">Стаж, лет</label><input class="i" type="number" inputmode="numeric" id="p-exp" name="experience" min="0" max="70" value="${esc(p.experience??'')}" placeholder="Например: 5"></div>
@@ -1472,8 +1467,6 @@ function profileHTML(){
      <label class="l" style="margin-top:10px">Радиус заказов</label><div class="quick">${RADII.map(v=>`<button type="button" class="chip" data-act="pickradius" data-v="${v}" aria-pressed="${Number(rad)===v}">${v?v+' км':'Весь город'}</button>`).join('')}</div><input type="hidden" name="radius" value="${esc(rad)}"></div>
     <div class="f"><label class="l">Фото работ</label><div id="worksBox">${ex?worksHTML():''}</div><span class="hint">Фото сохраняются сразу. Заказчики видят их в вашей анкете.</span></div>
    </div>
-   <div class="f" id="passBox" hidden><label class="l" for="p-pass">Пароль оператора</label><span class="hint">Пароль выдаёт владелец платформы.</span><input class="i" type="password" id="p-pass" name="pass" autocomplete="off"></div>
-   ${p.role==='manager'&&r!=='manager'?'<p class="note">Доступ оператора закрыт: пароль оператора сменился. Выберите роль «Оператор» и введите новый пароль.</p>':''}
    <p class="err" id="formErr"></p>
    <button class="btn btn-main" type="submit">Сохранить</button>
   </form>
@@ -1556,11 +1549,12 @@ function renderAuth(){
       <p class="err" id="formErr"></p>
       <button class="btn btn-main" type="submit">Войти</button>
      </form>
-     <button class="btn btn-ghost" data-act="authmode" data-m="register" style="margin-top:12px">Нет аккаунта? Зарегистрироваться</button></div>`;
+     <button class="btn btn-ghost" data-act="authmode" data-m="register" style="margin-top:12px">Нет аккаунта? Зарегистрироваться</button>
+     <p class="hint" style="margin-top:16px;text-align:center">Оператор платформы? <a href="./console/" data-ext>Открыть веб-панель</a></p></div>`;
     return;
   }
   S.reg={role:null};S.drafts.reg=[];
-  const roles=[['customer','Мне нужен мастер','Подаю заказ и выбираю мастера по цене'],['executor','Я мастер','Беру заказы рядом и предлагаю цену'],['manager','Я оператор платформы','Вход только по паролю оператора']];
+  const roles=[['customer','Мне нужен мастер','Подаю заказ и выбираю мастера по цене'],['executor','Я мастер','Беру заказы рядом и предлагаю цену']];
   g.innerHTML=`<div class="wrap gate"><div class="hero-mark">Барна<span>бас</span></div>
    <p class="lead">Зарегистрируйтесь, чтобы подать заказ или брать заказы рядом.</p>
    <form data-form="register" novalidate>
@@ -1578,7 +1572,6 @@ function renderAuth(){
      <div class="f"><label class="l">Где вы работаете <span class="hint">(можно позже)</span></label><button type="button" class="small-btn" data-act="reggps">${IC.gps}Определить моё местоположение</button><span class="hint" id="regGeo">Покажем заказы рядом с вами.</span></div>
      <div class="f"><label class="l">Фото работ <span class="hint">(до ${MAXPH.reg})</span></label><div id="dp-reg">${draftHTML('reg')}</div></div>
     </div>
-    <div class="f" id="regPass" hidden><label class="l" for="r-pass">Пароль оператора</label><span class="hint">Пароль выдаёт владелец платформы.</span><input class="i" type="password" id="r-pass" name="pass" autocomplete="off"></div>
     <p class="err" id="formErr"></p>
     <button class="btn btn-main" type="submit">Зарегистрироваться</button>
    </form>
@@ -1627,12 +1620,12 @@ const ACT={
   chatstab:el=>{S.chatsTab=el.dataset.v;renderMain()},
   pickcat:el=>{el.parentNode.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===el));el.closest('form').category.value=el.dataset.c},
   pickrole:el=>{el.parentNode.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===el));const r=el.dataset.r;el.closest('form').role.value=r;
-    $('#execBox').hidden=r!=='executor';$('#p-name-l').textContent=r==='executor'?'ФИО':'Имя';$('#passBox').hidden=!(r==='manager'&&role()!=='manager');
+    $('#execBox').hidden=r!=='executor';$('#p-name-l').textContent=r==='executor'?'ФИО':'Имя';
     const b=$('#worksBox');if(r==='executor'&&b&&!b.innerHTML)b.innerHTML=worksHTML();const ms=$('#baseMapSlot');if(r==='executor'&&ms&&!ms.innerHTML){ms.innerHTML=mapPh('base:me',220);mountMaps()}},
   pickspec:el=>el.setAttribute('aria-pressed',el.getAttribute('aria-pressed')!=='true'),
   pickradius:el=>{el.parentNode.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===el));el.closest('form').radius.value=el.dataset.v;const M=MAPS['base:me'];if(M&&M.map)drawBase(M)},
   regrole:el=>{el.parentNode.querySelectorAll('button').forEach(c=>c.setAttribute('aria-pressed',c===el));const r=S.reg.role=el.dataset.r;
-    $('#regExec').hidden=r!=='executor';$('#regPass').hidden=r!=='manager';$('#r-name-l').textContent=r==='executor'?'ФИО':'Имя';$('#r-name').placeholder=r==='executor'?'Фамилия, имя, отчество':'Как к вам обращаться'},
+    $('#regExec').hidden=r!=='executor';$('#r-name-l').textContent=r==='executor'?'ФИО':'Имя';$('#r-name').placeholder=r==='executor'?'Фамилия, имя, отчество':'Как к вам обращаться'},
   regspec:el=>el.setAttribute('aria-pressed',el.getAttribute('aria-pressed')!=='true'),
   reggps:el=>{el.disabled=true;getPos().then(p=>{S.reg.geo=roundGeo(p,2);$('#regGeo').textContent='Местоположение определено ✓'}).catch(e=>{$('#regGeo').textContent=errText(e)}).finally(()=>el.disabled=false)},
   feedcat:el=>{S.feedCat=el.dataset.c;ls('barnabas_feedcat',S.feedCat);renderMain()},
@@ -1723,7 +1716,7 @@ const FORMS={
     setTimeout(()=>logEv('login'),1500);
   },
   async register(f){
-    const name=f.name.value.trim(),d=phoneDigits(f.phone.value),r=S.reg.role,pw=f.pw.value,mk=f.pass.value;
+    const name=f.name.value.trim(),d=phoneDigits(f.phone.value),r=S.reg.role,pw=f.pw.value;
     const specs=[...f.querySelectorAll('[data-act="regspec"][aria-pressed="true"]')].map(b=>b.dataset.c);
     const experience=expVal(f.experience.value),about=f.about.value.trim();
     if(!r)throw 'Выберите, кто вы: заказчик или мастер';
@@ -1737,7 +1730,6 @@ const FORMS={
       if(experience==null||isNaN(experience))throw 'Укажите стаж в годах (0, если меньше года)';
       if(about.length<20)throw 'Расскажите о себе хотя бы в паре предложений';
     }
-    if(r==='manager'){if(!mk)throw 'Введите пароль оператора';if(mk.includes('/')||!(await keyExists(mk)))throw 'Неверный пароль оператора'}
     S.registering=true;
     try{
       try{await S.auth.createUserWithEmailAndPassword(emailOf(d),pw)}catch(e){throw authErr(e)}
@@ -1753,7 +1745,6 @@ const FORMS={
     /* the profile exists now, so the app can open; photos and operator rights follow without blocking the screen */
     const uid=S.uid,photos=S.drafts.reg||[];S.tab=null;S.drafts.reg=[];schedule();toast('Добро пожаловать в Барнабас!');
     if(r==='executor'&&photos.length){try{await uploadPhotos('profiles/'+uid+'/works',photos)}catch(e){console.warn(e);toast('Анкета сохранена, но фото не загрузились. Добавьте их в профиле',true)}}
-    if(r==='manager'){await S.db.collection('managers').doc(uid).set({key:mk,at:Date.now()});await loadMgr();syncRoleSubs();schedule()}
   },
   async chpass(f){
     const old=f.old.value,nw=f.nw.value;
@@ -1774,7 +1765,7 @@ const FORMS={
       upd.experience=e;upd.about=f.about.value.trim();upd.radiusKm=Number(f.radius.value)||0;
       if(S.pick)upd.geo=roundGeo(S.pick,2);
     }
-    if(r==='manager'&&role()!=='manager')await becomeManager(f.pass.value);
+    if(r==='manager'&&role()!=='manager')throw 'Роль оператора назначается только в веб-панели';
     await S.db.collection('profiles').doc(S.uid).update(upd);
     if(was!==r)logEv('role',{text:`${ROLE[was]} → ${ROLE[r]}`});else logEv('profile',{text:r==='executor'?specs.join(', '):''});
     S.tab=null;S.taskRole=null;pop();syncRoleSubs();schedule();toast('Профиль сохранён');

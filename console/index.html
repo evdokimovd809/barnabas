@@ -1,0 +1,1584 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f6f9">
+<meta name="robots" content="noindex,nofollow">
+<title>Барнабас — панель оператора</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230f172a'/%3E%3Ctext x='32' y='44' font-size='34' font-family='Arial' font-weight='700' fill='%234ade80' text-anchor='middle'%3EБ%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f4f6f9; --card:#ffffff; --line:#e6e9ef; --line-2:#eff2f6;
+  --text:#111827; --muted:#6b7280; --muted-2:#9aa3af; --soft:#f6f8fb;
+  --accent:#16a34a; --accent-d:#12813c; --accent-soft:#e9f8ef;
+  --blue:#2563eb; --blue-soft:#e8f0ff;
+  --amber:#b45309; --amber-soft:#fff4e0;
+  --red:#dc2626; --red-soft:#fee7e7;
+  --violet:#6d28d9; --violet-soft:#f1eaff;
+  --slate:#334155; --slate-soft:#eef1f6;
+  --radius:14px; --radius-sm:10px;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px rgba(16,24,40,.06);
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+[hidden]{display:none!important}
+h1,h2,h3{margin:0;letter-spacing:-.02em}
+::selection{background:var(--accent-soft)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#d5dae3;border-radius:99px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- common ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border-radius:11px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:14px;transition:.15s ease;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn-main{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-main:hover{background:var(--accent-d);border-color:var(--accent-d)}
+.btn-danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn-danger:hover{filter:brightness(.94)}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.btn-ghost{background:transparent}
+.btn-sm{height:34px;padding:0 12px;font-size:13px;border-radius:9px}
+.btn-block{width:100%}
+.icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--slate);border:1px solid transparent;position:relative}
+.icon-btn:hover{background:var(--soft);border-color:var(--line)}
+.icon-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fld{display:block;margin:0 0 14px}
+.fld>span.lbl{display:block;font-weight:600;font-size:13px;margin:0 0 6px}
+.fld .hint{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:3px}
+.inp{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;background:#fff;padding:0 13px;outline:none;transition:.15s ease}
+textarea.inp{height:auto;min-height:96px;padding:11px 13px;resize:vertical;line-height:1.5}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.inp::placeholder{color:var(--muted-2)}
+.err{color:var(--red);font-size:13px;min-height:18px;margin:2px 0 10px}
+.muted{color:var(--muted)}
+.mono{font-variant-numeric:tabular-nums}
+.row{display:flex;align-items:center;gap:10px}
+.spacer{flex:1}
+.wrap-any{overflow-wrap:anywhere}
+
+/* ---------- auth ---------- */
+.boot{position:fixed;inset:0;display:grid;place-items:center;color:var(--muted);gap:14px;background:var(--bg);z-index:100}
+.spinner{width:26px;height:26px;border-radius:50%;border:3px solid #dfe4ec;border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.auth{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px 18px;background:
+  radial-gradient(900px 500px at 15% -10%,#e9f8ef 0%,transparent 60%),
+  radial-gradient(800px 500px at 100% 10%,#e8f0ff 0%,transparent 55%),var(--bg)}
+.auth-card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:30px}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#1f2937,#0b1220);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;letter-spacing:-1px;box-shadow:0 6px 14px rgba(15,23,42,.18)}
+.brand-mark em{font-style:normal;color:#4ade80}
+.brand b{display:block;font-size:16.5px;letter-spacing:-.2px;line-height:1.15}
+.brand small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.auth h1{margin:24px 0 6px;font-size:24px}
+.auth .sub{margin:0 0 20px;color:var(--muted);font-size:13.5px;line-height:1.5}
+.seg{display:inline-flex;background:var(--soft);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
+.seg button{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--text);box-shadow:var(--shadow-sm)}
+.auth .foot{margin-top:16px;text-align:center;font-size:12.5px;color:var(--muted)}
+.auth-note{margin-top:18px;padding:12px 14px;border-radius:11px;background:var(--soft);border:1px solid var(--line-2);color:var(--muted);font-size:12.5px;line-height:1.5}
+.auth-note b{color:var(--text)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+.side{background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:18px 14px 14px;z-index:30}
+.side .brand{padding:2px 6px 20px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-sec{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);margin:16px 8px 7px}
+.nav button{display:flex;align-items:center;gap:11px;height:42px;padding:0 11px;border-radius:10px;font-size:14px;font-weight:500;color:var(--slate);text-align:left;width:100%}
+.nav button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;opacity:.85}
+.nav button:hover{background:var(--soft)}
+.nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent-d);font-weight:700}
+.nav button[aria-current="page"] svg{opacity:1}
+.nav .cnt{margin-left:auto;min-width:22px;height:20px;padding:0 6px;border-radius:99px;background:#eef1f6;color:var(--muted);font-size:11.5px;font-weight:700;display:grid;place-items:center}
+.nav .cnt.hot{background:var(--red-soft);color:var(--red)}
+.side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+.me{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:10px}
+.me .ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#0b7a3b);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:0 0 auto}
+.me .who{min-width:0;line-height:1.25}
+.me .who b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me .who small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me .out{margin-left:auto;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.me .out:hover{background:var(--soft);color:var(--red)}
+.me .out svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.top{height:66px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:25}
+.top-title{min-width:0;margin-right:auto}
+.top-title h1{font-size:18.5px;line-height:1.15}
+.top-title p{margin:2px 0 0;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-search{position:relative;width:min(320px,34vw)}
+.top-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:17px;height:17px;stroke:var(--muted-2);fill:none;stroke-width:1.8;stroke-linecap:round}
+.top-search input{width:100%;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:0 12px 0 35px;outline:none}
+.top-search input:focus{background:#fff;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.top .ava{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1f2937,#0b1220);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;cursor:pointer}
+.dot{position:absolute;top:5px;right:5px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;border:2px solid #fff}
+.content{padding:22px;width:100%;max-width:1440px;margin:0 auto}
+.content>*:first-child{margin-top:0}
+
+/* ---------- dashboard pieces ---------- */
+.page-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px}
+.page-head h2{font-size:22px}
+.page-head p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;box-shadow:var(--shadow-sm);min-width:0}
+.kpi .lbl{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12.5px;font-weight:500}
+.kpi .lbl svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kpi .num{font-size:26px;font-weight:750;letter-spacing:-.03em;margin-top:8px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .num small{font-size:14px;font-weight:600;color:var(--muted);letter-spacing:0}
+.kpi .sub{margin-top:4px;font-size:12px;color:var(--muted)}
+.kpi.accent{background:linear-gradient(135deg,#16a34a,#0e7a3a);border-color:transparent;color:#fff}
+.kpi.accent .lbl,.kpi.accent .sub{color:rgba(255,255,255,.82)}
+.kpi.accent .num small{color:rgba(255,255,255,.75)}
+.grid-2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.panel-h{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line-2)}
+.panel-h h3{font-size:14.5px}
+.panel-h .sub{color:var(--muted);font-size:12px;margin-left:auto}
+.panel-b{padding:14px 16px}
+.panel-b.flush{padding:0}
+.attn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.attn button{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--line);background:#fff;border-radius:12px;text-align:left;box-shadow:var(--shadow-sm);transition:.15s}
+.attn button:hover{border-color:#d6dbe4;transform:translateY(-1px)}
+.attn button:last-child:nth-child(odd){grid-column:1/-1}
+.attn .n{width:38px;height:38px;border-radius:10px;background:var(--amber-soft);color:var(--amber);display:grid;place-items:center;font-weight:750;font-size:15px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.attn .t{min-width:0;line-height:1.3}
+.attn .t b{display:block;font-size:13.5px}
+.attn .t span{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+.attn .chev{margin-left:auto;color:var(--muted-2)}
+.bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--soft);gap:2px}
+.bar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:11px;color:var(--muted);font-size:12.5px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+/* ---------- lists / tables ---------- */
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.chip{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:500;color:var(--slate);white-space:nowrap}
+.chip:hover{background:var(--soft)}
+.chip[aria-pressed="true"]{background:var(--slate);border-color:var(--slate);color:#fff}
+.chip .cnt{font-size:11.5px;font-weight:700;background:rgba(0,0,0,.06);padding:1px 6px;border-radius:99px}
+.chip[aria-pressed="true"] .cnt{background:rgba(255,255,255,.18)}
+.searchbar{position:relative;max-width:420px;margin-bottom:14px}
+.searchbar svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:17px;height:17px;stroke:var(--muted-2);fill:none;stroke-width:1.8}
+.searchbar input{width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 13px 0 37px;outline:none}
+.searchbar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.tbl th{text-align:left;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-2);padding:11px 14px;border-bottom:1px solid var(--line);background:#fbfcfe;white-space:nowrap}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle;overflow:hidden}
+.tbl tbody tr{cursor:pointer;transition:background .12s}
+.tbl tbody tr:hover{background:#fafbfd}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl .t-main{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl .t-sub{color:var(--muted);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl .nowrap{white-space:nowrap}
+.tbl .num{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.person{display:flex;align-items:center;gap:9px;min-width:0}
+.person .ava{width:30px;height:30px;border-radius:50%;background:var(--slate-soft);color:var(--slate);display:grid;place-items:center;font-weight:700;font-size:12px;flex:0 0 auto;position:relative}
+.person .ava.on::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid #fff}
+.person .nm{min-width:0;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .sb{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;align-items:center;gap:5px;height:23px;padding:0 8px;border-radius:7px;font-size:11.5px;font-weight:650;white-space:nowrap}
+.badge::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
+.badge.open{background:var(--blue-soft);color:#1d4ed8}
+.badge.booked{background:var(--amber-soft);color:var(--amber)}
+.badge.done{background:var(--accent-soft);color:var(--accent-d)}
+.badge.cancelled{background:var(--red-soft);color:var(--red)}
+.badge.plain{background:var(--slate-soft);color:var(--slate)}
+.badge.plain::before{display:none}
+.badge.ok{background:var(--accent-soft);color:var(--accent-d)}
+.badge.warn{background:var(--amber-soft);color:var(--amber)}
+.badge.bad{background:var(--red-soft);color:var(--red)}
+.badge.gray{background:var(--slate-soft);color:var(--muted)}
+.empty{padding:52px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.empty svg{width:34px;height:34px;stroke:var(--muted-2);fill:none;stroke-width:1.5;margin:0 auto 10px;display:block}
+.more{display:block;margin:12px auto 0}
+
+/* ---------- timeline ---------- */
+.timeline{list-style:none;margin:0;padding:0}
+.tl{display:flex;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line-2);cursor:pointer}
+.tl:last-child{border-bottom:0}
+.tl:hover{background:#fafbfd}
+.tl .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto;background:var(--slate-soft);color:var(--slate)}
+.tl .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tl .ic.tasks{background:var(--blue-soft);color:var(--blue)}
+.tl .ic.offers{background:var(--violet-soft);color:var(--violet)}
+.tl .ic.deals{background:var(--accent-soft);color:var(--accent-d)}
+.tl .ic.chats{background:var(--amber-soft);color:var(--amber)}
+.tl .ic.people{background:var(--slate-soft);color:var(--slate)}
+.tl .ic.mgr{background:#eef2ff;color:#4338ca}
+.tl .body{min-width:0;flex:1}
+.tl .body b{font-size:13.5px}
+.tl .body .what{font-size:13px;margin-top:1px}
+.tl .body .meta{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl .time{font-size:11.5px;color:var(--muted-2);white-space:nowrap}
+
+/* ---------- chats ---------- */
+.chat-layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:14px;min-height:calc(100vh - 150px)}
+.chat-list{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 150px)}
+.chat-list .list{overflow:auto}
+.chat-item{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line-2);cursor:pointer;text-align:left;width:100%}
+.chat-item:hover{background:#fafbfd}
+.chat-item[aria-current="true"]{background:var(--accent-soft)}
+.chat-item .body{min-width:0;flex:1}
+.chat-item .top-line{display:flex;gap:8px;align-items:baseline}
+.chat-item .top-line b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-item .top-line time{margin-left:auto;font-size:11px;color:var(--muted-2);white-space:nowrap}
+.chat-item .prev{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-item .wait{width:8px;height:8px;border-radius:50%;background:var(--red);flex:0 0 auto;margin-top:6px}
+.chat-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;max-height:calc(100vh - 150px);overflow:hidden}
+.chat-head{display:flex;align-items:center;gap:11px;padding:12px 16px;border-bottom:1px solid var(--line-2)}
+.chat-head .ttl{font-weight:700;font-size:14px}
+.chat-head .sub{color:var(--muted);font-size:12px}
+.chat-msgs{flex:1;overflow:auto;padding:16px;background:#fbfcfe;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:74%;padding:9px 12px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:13.5px;line-height:1.42;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.mine{align-self:flex-end;background:var(--accent);border-color:var(--accent);color:#fff}
+.msg .who{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:2px}
+.msg.mine .who{color:rgba(255,255,255,.8)}
+.msg .tm{display:block;font-size:10.5px;color:var(--muted-2);margin-top:4px;text-align:right}
+.msg.mine .tm{color:rgba(255,255,255,.72)}
+.chat-form{display:flex;gap:9px;padding:12px;border-top:1px solid var(--line-2);align-items:flex-end}
+.chat-form textarea{flex:1;min-height:42px;max-height:130px;height:42px;resize:none;border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;line-height:1.4}
+.chat-form textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chat-form .btn{height:42px}
+
+/* ---------- drawer / modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:60;animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(600px,100vw);background:#fff;z-index:61;display:flex;flex-direction:column;box-shadow:-20px 0 50px rgba(15,23,42,.16);animation:slide .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes slide{from{transform:translateX(40px);opacity:.6}to{transform:none;opacity:1}}
+.drawer-h{display:flex;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.drawer-h .ttl{font-size:18px;font-weight:750;letter-spacing:-.02em;line-height:1.25}
+.drawer-h .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+.drawer-b{flex:1;overflow:auto;padding:18px 20px 30px}
+.drawer-f{border-top:1px solid var(--line);padding:13px 20px;display:flex;gap:9px;flex-wrap:wrap;background:#fff}
+.xbtn{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--muted);flex:0 0 auto}
+.xbtn:hover{background:var(--soft);color:var(--text)}
+.xbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.dl{display:grid;grid-template-columns:132px minmax(0,1fr);gap:8px 14px;font-size:13.5px;margin:0 0 16px}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+.sect-t{font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2);margin:20px 0 9px}
+.note{padding:11px 13px;border-radius:10px;background:var(--soft);border:1px solid var(--line-2);font-size:13px;color:var(--muted);line-height:1.5}
+.note.warn{background:var(--amber-soft);border-color:#f6dfae;color:#8a5306}
+.note.bad{background:var(--red-soft);border-color:#f6c9c9;color:#a11b1b}
+.note.ok{background:var(--accent-soft);border-color:#c8ecd5;color:#0d6b34}
+.modal-wrap{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:20px}
+.modal{width:100%;max-width:460px;background:#fff;border-radius:16px;box-shadow:0 30px 70px rgba(15,23,42,.28);overflow:hidden;animation:pop .16s ease}
+@keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.modal-h{padding:18px 20px 4px}
+.modal-h h3{font-size:17px}
+.modal-h p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.modal-b{padding:14px 20px 18px}
+.modal-f{display:flex;gap:9px;justify-content:flex-end;padding:0 20px 18px}
+.modal .err{margin:0 0 8px}
+.opt{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;cursor:pointer;font-size:13.5px}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt input{accent-color:var(--accent);width:16px;height:16px}
+.opt span{flex:1}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:11px 16px;border-radius:11px;font-size:13.5px;font-weight:500;z-index:90;opacity:0;pointer-events:none;transition:.2s ease;max-width:min(520px,92vw);text-align:center;box-shadow:0 12px 30px rgba(15,23,42,.3)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.toast.bad{background:#b91c1c}
+.only-mobile{display:none}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-2{grid-template-columns:1fr}
+}
+@media (max-width:980px){
+  .shell{grid-template-columns:76px minmax(0,1fr)}
+  .side{padding:16px 10px 12px}
+  .side .brand{padding:0 0 16px;justify-content:center}
+  .side .brand b,.side .brand small{display:none}
+  .nav button{justify-content:center;padding:0}
+  .nav button .lbl,.nav .cnt,.nav-sec{display:none}
+  .me .who,.me .out{display:none}
+  .me{justify-content:center;padding:6px 0}
+  .top{padding:0 16px}
+  .content{padding:16px}
+}
+@media (max-width:760px){
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;bottom:0;width:250px;transform:translateX(-102%);transition:transform .2s ease;box-shadow:20px 0 50px rgba(15,23,42,.2);padding:18px 14px 14px}
+  .side.open{transform:none}
+  .side .brand{justify-content:flex-start;padding:2px 6px 20px}
+  .side .brand b,.side .brand small{display:block}
+  .nav button{justify-content:flex-start;padding:0 11px}
+  .nav button .lbl,.nav .cnt,.nav-sec{display:block}
+  .me .who,.me .out{display:block}
+  .me{justify-content:flex-start;padding:8px 6px}
+  .only-mobile{display:grid}
+  .top-search{display:none}
+  .content{padding:14px}
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi .num{font-size:22px}
+  .attn{grid-template-columns:1fr}
+  .chat-layout{grid-template-columns:1fr}
+  .chat-list{max-height:320px}
+  .chat-box{max-height:calc(100vh - 220px)}
+  .tbl .hide-sm{display:none}
+  .dl{grid-template-columns:110px minmax(0,1fr)}
+}
+@media (max-width:480px){
+  .kpis{grid-template-columns:1fr}
+  .top-title p{display:none}
+  .drawer{width:100vw}
+}
+</style>
+</head>
+<body>
+
+<div class="boot" id="boot"><div class="spinner"></div><span>Загружаем панель…</span></div>
+
+<div class="auth" id="auth" hidden>
+  <div class="auth-card">
+    <div class="brand"><div class="brand-mark">Б<em>.</em></div><div><b>Барнабас</b><small>Панель оператора</small></div></div>
+
+    <div id="authLogin">
+      <h1>Вход для оператора</h1>
+      <p class="sub">Только для сотрудников платформы. Номер телефона и пароль — те же, что в приложении.</p>
+      <div class="seg" style="margin-bottom:16px">
+        <button type="button" data-auth="login" aria-pressed="true">Вход</button>
+        <button type="button" data-auth="register" aria-pressed="false">Регистрация оператора</button>
+      </div>
+      <form id="loginForm" novalidate>
+        <label class="fld"><span class="lbl">Телефон</span><input class="inp" name="phone" type="tel" inputmode="tel" autocomplete="username" placeholder="+7 700 000 00 00"></label>
+        <label class="fld"><span class="lbl">Пароль</span><input class="inp" name="pass" type="password" autocomplete="current-password" placeholder="••••••"></label>
+        <p class="err" id="loginErr"></p>
+        <button class="btn btn-main btn-block" type="submit">Войти в панель</button>
+      </form>
+      <p class="auth-note">Нет доступа? Оператора заводит владелец платформы: он выдаёт <b>пароль оператора</b>, по нему вы регистрируетесь на вкладке «Регистрация оператора».</p>
+    </div>
+
+    <div id="authRegister" hidden>
+      <h1>Регистрация оператора</h1>
+      <p class="sub">Создайте отдельный аккаунт оператора. Понадобится пароль оператора от владельца платформы.</p>
+      <div class="seg" style="margin-bottom:16px">
+        <button type="button" data-auth="login" aria-pressed="false">Вход</button>
+        <button type="button" data-auth="register" aria-pressed="true">Регистрация оператора</button>
+      </div>
+      <form id="registerForm" novalidate>
+        <label class="fld"><span class="lbl">Имя</span><input class="inp" name="name" maxlength="80" autocomplete="name" placeholder="Как к вам обращаться"></label>
+        <label class="fld"><span class="lbl">Телефон</span><input class="inp" name="phone" type="tel" inputmode="tel" autocomplete="username" placeholder="+7 700 000 00 00"></label>
+        <label class="fld"><span class="lbl">Пароль</span><input class="inp" name="pass" type="password" autocomplete="new-password" placeholder="Минимум 6 символов"><span class="hint">Придумайте пароль для входа в панель.</span></label>
+        <label class="fld"><span class="lbl">Пароль оператора</span><input class="inp" name="key" autocomplete="off" placeholder="Выдаёт владелец платформы"><span class="hint">Проверяется по базе, в открытом виде нигде не сохраняется.</span></label>
+        <p class="err" id="registerErr"></p>
+        <button class="btn btn-main btn-block" type="submit">Создать аккаунт оператора</button>
+      </form>
+    </div>
+
+    <div id="authActivate" hidden>
+      <h1>Нет доступа оператора</h1>
+      <p class="sub">Аккаунт <b id="actPhone">—</b> существует, но у него нет прав оператора. Введите пароль оператора, чтобы привязать его к этому аккаунту.</p>
+      <form id="activateForm" novalidate>
+        <label class="fld"><span class="lbl">Пароль оператора</span><input class="inp" name="key" autocomplete="off" placeholder="Выдаёт владелец платформы"></label>
+        <p class="err" id="activateErr"></p>
+        <button class="btn btn-main btn-block" type="submit">Активировать доступ</button>
+      </form>
+      <button class="btn btn-ghost btn-block" type="button" id="activateOut" style="margin-top:9px">Выйти из аккаунта</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <div class="shell">
+    <aside class="side" id="sidebar">
+      <div class="brand"><div class="brand-mark">Б<em>.</em></div><div><b>Барнабас</b><small>Панель оператора</small></div></div>
+      <nav class="nav" id="nav"></nav>
+      <div class="side-foot">
+        <div class="me">
+          <div class="ava" id="meAva">О</div>
+          <div class="who"><b id="meName">Оператор</b><small id="mePhone">—</small></div>
+          <button class="out" id="logoutBtn" title="Выйти" aria-label="Выйти">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="top">
+        <button class="icon-btn only-mobile" id="burger" aria-label="Меню">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <div class="top-title"><h1 id="pageTitle">Обзор</h1><p id="pageSub">Платформа в реальном времени</p></div>
+        <div class="top-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="globalSearch" type="search" placeholder="Поиск: заказ, имя, телефон" autocomplete="off">
+        </div>
+        <button class="icon-btn" id="refreshBtn" title="Обновить данные" aria-label="Обновить">
+          <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+        </button>
+        <button class="icon-btn" id="bellBtn" title="Требует внимания" aria-label="Требует внимания">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>
+          <span class="dot" id="bellDot" hidden>0</span>
+        </button>
+        <div class="ava" id="avatarTop" title="Оператор">О</div>
+      </header>
+      <main class="content" id="view"></main>
+    </div>
+  </div>
+</div>
+
+<div id="drawerHost"></div>
+<div id="modalHost"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+'use strict';
+/* ============================================================
+   Барнабас — панель оператора (standalone web console)
+   Firebase compat SDK, same project as the Telegram Mini App.
+   ============================================================ */
+const CFG={apiKey:"AIzaSyCfobE8TgfJrwGa0mpldYxQgSmwix31JtU",authDomain:"barnabas-5f744.firebaseapp.com",projectId:"barnabas-5f744",storageBucket:"barnabas-5f744.firebasestorage.app",messagingSenderId:"143339803273",appId:"1:143339803273:web:3053bc0c1b10b34219ec58"};
+
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FV=()=>firebase.firestore.FieldValue;
+
+const ROLE={customer:'Заказчик',executor:'Исполнитель',manager:'Оператор'};
+const STATUS={open:['Ждёт предложений','open'],booked:['В работе','booked'],done:['Выполнено','done'],cancelled:['Отменено','cancelled']};
+const STAGE={booked:['Выбран'],onway:['В пути'],started:['Работает'],finished:['Закончил']};
+const CATS=['Сантехник','Электрик','Мастер на час','Сборка мебели','Бытовая техника','Уборка','Отделка и ремонт','Другое'];
+const DEF_CFG={mode:'savings',share:30,percent:10};
+const EV={
+  register:['Регистрация','user','people'],login:['Вход по паролю','user','people'],profile:['Профиль обновлён','user','people'],role:['Смена роли','user','people'],geo:['Указал место работы','pin','people'],
+  task_new:['Новый заказ','plus','tasks'],task_edit:['Заказ изменён','list','tasks'],price_up:['Цена поднята','tag','tasks'],task_cancel:['Заказ отменён','x','tasks'],
+  offer:['Предложение цены','tag','offers'],offer_edit:['Предложение изменено','tag','offers'],offer_accept:['Согласие на цену заказчика','check','offers'],
+  offer_withdraw:['Предложение отозвано','x','offers'],offer_decline:['Предложение отклонено','x','offers'],offer_restore:['Предложение возвращено','tag','offers'],
+  choose:['Исполнитель выбран','check','deals'],unbook:['Заказчик снял исполнителя','x','deals'],leave:['Исполнитель отказался','x','deals'],
+  stage:['Этап работы','route','deals'],done:['Работа подтверждена','check','deals'],review:['Отзыв','star','deals'],
+  chat:['Чат заказа','chat','chats'],support:['Поддержка','chat','chats'],
+  mgr:['Оператор','shield','mgr']
+};
+const EV_GROUPS=[['all','Все'],['tasks','Заказы'],['offers','Предложения'],['deals','Сделки'],['chats','Сообщения'],['people','Люди'],['mgr','Оператор']];
+const MT_FILTERS=[['all','Все'],['unchecked','Не проверены'],['open','Ждут предложений'],['nooffers','Без предложений'],['booked','В работе'],['finished','Ждут подтверждения'],['late','Просрочены'],['done','Выполнены'],['cancelled','Отменены']];
+const P_TABS=[['executor','Исполнители'],['customer','Заказчики'],['manager','Операторы'],['online','Онлайн'],['unverified','Не проверены'],['blocked','Заблокированы']];
+
+/* ---------- inline icons ---------- */
+const I=(()=>{const w=(p,extra='')=>`<svg viewBox="0 0 24 24" ${extra}>${p}</svg>`;
+ const o={
+  chart:w('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+  list:w('<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>'),
+  users:w('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>'),
+  pulse:w('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
+  chat:w('<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+  money:w('<circle cx="12" cy="12" r="9"/><path d="M8 9h8M8 13h8M12 17V7l-2 2"/>'),
+  user:w('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>'),
+  plus:w('<path d="M12 5v14M5 12h14"/>'),
+  tag:w('<path d="M20.6 13.4 12 22 2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>'),
+  check:w('<path d="M20 6 9 17l-5-5"/>'),
+  x:w('<path d="M18 6 6 18M6 6l12 12"/>'),
+  route:w('<circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M7 19h6a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h6"/>'),
+  star:w('<path d="m12 3 2.7 5.7 6.3.9-4.6 4.4 1.1 6.2L12 17.3 6.5 20.2l1.1-6.2L3 9.6l6.3-.9z"/>'),
+  shield:w('<path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/>'),
+  search:w('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+  bell:w('<path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/>'),
+  pin:w('<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/>'),
+  calendar:w('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/>'),
+  phone:w('<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.6a16 16 0 0 0 6.3 6.3l1.2-1.2a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/>'),
+  dots:w('<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'),
+  arrow:w('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+  back:w('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
+  out:w('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>'),
+  refresh:w('<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/>'),
+  warn:w('<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>'),
+  cog:w('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  filter:w('<path d="M3 5h18l-7 8v6l-4 2v-8z"/>')
+ };
+ return o;})();
+
+/* ---------- formatting ---------- */
+const todayStr=(add=0)=>{const d=new Date(Date.now()+add*864e5);return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const toMs=(d,t)=>new Date(d+'T'+(t||'00:00')).getTime();
+const fmtPrice=p=>Math.round(Number(p)||0).toLocaleString('ru-RU')+' ₸';
+function fmtDate(d){if(!d)return'—';const x=new Date(d+'T00:00');if(isNaN(x))return esc(d);if(d===todayStr())return 'сегодня';if(d===todayStr(1))return 'завтра';if(d===todayStr(-1))return 'вчера';return x.toLocaleDateString('ru-RU',{weekday:'short',day:'numeric',month:'long'})}
+function fmtStamp(ms){if(!ms)return'—';const d=new Date(ms),n=new Date();const hm=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});return d.toDateString()===n.toDateString()?hm:d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+', '+hm}
+function ago(ms){if(!ms)return 'давно';const m=Math.round((Date.now()-ms)/6e4);if(m<1)return 'только что';if(m<60)return m+' мин назад';const h=Math.round(m/60);if(h<24)return h+' ч назад';const d=Math.round(h/24);return d+' '+plural(d,'день','дня','дней')+' назад'}
+function plural(n,a,b,c){n=Math.abs(n)%100;const d=n%10;if(n>10&&n<20)return c;if(d>1&&d<5)return b;if(d===1)return a;return c}
+const sum=(a,f)=>a.reduce((s,x)=>s+(Number(f(x))||0),0);
+const round500=x=>Math.max(500,Math.round(x/500)*500);
+const expText=y=>y==null||y===''?'не указан':Number(y)<1?'меньше года':y+' '+plural(Number(y),'год','года','лет');
+const isOnline=p=>!!(p&&p.lastSeen&&Date.now()-p.lastSeen<5*6e4);
+const initials=n=>String(n||'?').trim().charAt(0).toUpperCase()||'?';
+function phoneDigits(ph){let d=String(ph||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);if(d.length===10)d='7'+d;return d.length>=11&&d.length<=15?d:null}
+const emailOf=d=>d+'@barnabas-users.app';
+const fmtPhone=d=>'+'+d.slice(0,d.length-10)+' '+d.slice(-10,-7)+' '+d.slice(-7,-4)+' '+d.slice(-4,-2)+' '+d.slice(-2);
+
+/* ---------- state ---------- */
+const S={
+  db:null,auth:null,uid:null,creating:false,ready:false,
+  tasks:[],profiles:{},privs:{},events:[],threads:[],cfg:{...DEF_CFG},
+  subs:[],tab:'overview',q:'',tasksFilter:'all',tasksQ:'',peopleTab:'executor',peopleQ:'',
+  evFilter:'all',evQ:'',chatsTab:'support',chatUid:null,chatTaskId:null,
+  openTaskId:null,openPersonId:null,msgs:[],offers:[],msgSub:null,offerSub:null,
+  chatInput:'',lastTaskCount:0
+};
+const T=id=>S.tasks.find(t=>t.id===id)||null;
+const P=id=>S.profiles[id]||null;
+const nameOf=(id,fb)=>(P(id)&&P(id).name)||fb||'—';
+const phoneOf=id=>(S.privs[id]&&S.privs[id].phone)||(P(id)&&P(id).phone)||'';
+const me=()=>P(S.uid);
+const finalOf=t=>t.finalPrice??t.price??null;
+const savedOf=t=>t.price&&finalOf(t)?Math.max(0,t.price-finalOf(t)):0;
+function feeFor(t){const c=S.cfg,f=finalOf(t)||0;if(c.mode==='percent')return Math.round(f*(Number(c.percent)||0)/100);return Math.round(savedOf(t)*(Number(c.share)||0)/100)}
+const feeOf=t=>t.fee??feeFor(t);
+const cfgText=c=>c.mode==='percent'?`${c.percent}% от цены исполнителя`:`${c.share}% от экономии заказчика`;
+const offerIds=t=>(t.offerBy||[]).filter(x=>!(t.rejectedIds||[]).includes(x));
+const isDeclined=(t,o)=>{const d=(t.declined||{})[o.executorId];return !!d&&d>=(o.updatedAt||o.createdAt||0)};
+const unbook={status:'open',executorId:null,execDate:null,execTime:null,bookedAt:null,finalPrice:null,stage:null,stageAt:null};
+const tq=t=>t?`«${String(t.title||'').slice(0,60)}»`:'';
+
+/* ---------- toast ---------- */
+let toastT=0;
+function toast(msg,bad){const el=$('#toast');el.textContent=msg;el.classList.toggle('bad',!!bad);el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3200)}
+
+/* ---------- manager events ---------- */
+function mgrEv(text,o={}){
+  if(!S.uid||!S.db)return;
+  const p=me();
+  S.db.collection('events').add({type:'mgr',actorId:S.uid,actorName:(p&&p.name)||'Оператор',actorRole:'manager',taskId:o.taskId||null,targetId:o.targetId||null,text:String(text||'').slice(0,300),at:Date.now()}).catch(e=>console.warn(e));
+}
+
+/* ---------- auth ---------- */
+const authErr=e=>{const c=(e&&e.code)||'';console.warn(e);
+  if(c==='auth/email-already-in-use')return 'Этот номер уже зарегистрирован. Войдите по паролю.';
+  if(['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-login-credentials','auth/invalid-email'].includes(c))return 'Неверный номер или пароль';
+  if(c==='auth/weak-password')return 'Пароль слишком простой. Минимум 6 символов';
+  if(c==='auth/too-many-requests')return 'Слишком много попыток. Подождите пару минут';
+  if(c==='auth/network-request-failed')return 'Нет связи с интернетом';
+  if(c==='auth/operation-not-allowed')return 'Вход по паролю не включён в настройках Firebase';
+  return 'Не получилось. Попробуйте ещё раз';
+};
+async function keyExists(k){try{return (await S.db.collection('managerKeys').doc(String(k)).get()).exists}catch(e){return false}}
+
+function showAuth(mode){
+  $('#boot').hidden=true;$('#app').hidden=true;$('#auth').hidden=false;
+  $('#authLogin').hidden=mode!=='login';
+  $('#authRegister').hidden=mode!=='register';
+  $('#authActivate').hidden=mode!=='activate';
+  $$('[data-auth]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.auth===(mode==='activate'?'login':mode))));
+  const f=mode==='register'?$('#registerForm'):mode==='activate'?$('#activateForm'):$('#loginForm');
+  const first=f&&f.querySelector('input');if(first)setTimeout(()=>first.focus(),60);
+}
+function showBoot(txt){$('#boot').hidden=false;$('#auth').hidden=true;$('#app').hidden=true;if(txt)$('#boot span').textContent=txt}
+
+async function checkMgr(uid){
+  try{
+    const m=await S.db.collection('managers').doc(uid).get();
+    if(!m.exists)return false;
+    const key=m.data().key;
+    if(!key)return false;
+    return await keyExists(key);
+  }catch(e){console.warn(e);return false}
+}
+function enterApp(){
+  S.ready=true;
+  $('#boot').hidden=true;$('#auth').hidden=true;$('#app').hidden=false;
+  const p=me();
+  const label=p?p.name:'Оператор';
+  const digits=String((S.auth.currentUser&&S.auth.currentUser.email)||'').replace('@barnabas-users.app','');
+  $('#meName').textContent=label||'Оператор';
+  $('#mePhone').textContent=digits?fmtPhone(digits):'';
+  $('#meAva').textContent=initials(label);
+  $('#avatarTop').textContent=initials(label);
+  startSubs();render();
+}
+async function activateKey(key){
+  key=String(key||'').trim();
+  if(!key)throw 'Введите пароль оператора';
+  if(!(await keyExists(key)))throw 'Неверный пароль оператора';
+  const uid=S.uid||(S.auth.currentUser&&S.auth.currentUser.uid);
+  if(!uid)throw 'Сессия истекла. Войдите заново';
+  S.uid=uid;
+  await S.db.collection('managers').doc(uid).set({key,at:Date.now()});
+  await mgrEv('Активировал доступ оператора');
+  enterApp();
+}
+
+$('#loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=e.target,btn=f.querySelector('[type=submit]'),err=$('#loginErr');
+  err.textContent='';const d=phoneDigits(f.phone.value);
+  if(!d){err.textContent='Проверьте номер телефона';return}
+  if(!f.pass.value){err.textContent='Введите пароль';return}
+  btn.disabled=true;btn.textContent='Входим…';
+  try{await S.auth.signInWithEmailAndPassword(emailOf(d),f.pass.value)}
+  catch(x){err.textContent=authErr(x)}
+  finally{btn.disabled=false;btn.textContent='Войти в панель'}
+});
+$('#registerForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=e.target,btn=f.querySelector('[type=submit]'),err=$('#registerErr');
+  err.textContent='';
+  const name=f.name.value.trim(),d=phoneDigits(f.phone.value),pw=f.pass.value,key=f.key.value.trim();
+  if(!name){err.textContent='Укажите имя';return}
+  if(!d){err.textContent='Проверьте номер телефона';return}
+  if(pw.length<6){err.textContent='Пароль — минимум 6 символов';return}
+  if(!key){err.textContent='Введите пароль оператора';return}
+  btn.disabled=true;btn.textContent='Проверяем пароль…';
+  try{
+    if(!(await keyExists(key)))throw 'Неверный пароль оператора';
+    btn.textContent='Создаём аккаунт…';
+    S.creating=true;
+    const cred=await S.auth.createUserWithEmailAndPassword(emailOf(d),pw);
+    const uid=cred.user.uid;
+    S.uid=uid;
+    await S.db.collection('profiles').doc(uid).set({name,role:'manager',createdAt:Date.now(),lastSeen:Date.now()});
+    await S.db.collection('private').doc(uid).set({phone:fmtPhone(d)});
+    await S.db.collection('managers').doc(uid).set({key,at:Date.now()});
+    S.profiles[uid]={id:uid,name,role:'manager',createdAt:Date.now(),lastSeen:Date.now()};
+    S.privs[uid]={phone:fmtPhone(d)};
+    S.uid=uid;S.creating=false;
+    mgrEv('Зарегистрировался как оператор');
+    enterApp();
+  }catch(x){
+    S.creating=false;
+    err.textContent=typeof x==='string'?x:authErr(x);
+  }finally{btn.disabled=false;btn.textContent='Создать аккаунт оператора'}
+});
+$('#activateForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=e.target,btn=f.querySelector('[type=submit]'),err=$('#activateErr');
+  err.textContent='';btn.disabled=true;btn.textContent='Проверяем…';
+  try{await activateKey(f.key.value)}
+  catch(x){err.textContent=typeof x==='string'?x:'Не получилось. Попробуйте ещё раз'}
+  finally{btn.disabled=false;btn.textContent='Активировать доступ'}
+});
+$('#activateOut').addEventListener('click',()=>S.auth.signOut());
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-auth]');
+  if(b){showAuth(b.dataset.auth);return}
+});
+
+/* ---------- subscriptions ---------- */
+function stopSubs(){S.subs.forEach(u=>{try{u()}catch(e){}});S.subs=[];if(S.msgSub){try{S.msgSub()}catch(e){}S.msgSub=null}if(S.offerSub){try{S.offerSub()}catch(e){}S.offerSub=null}S.msgs=[];S.offers=[]}
+let raf=0;
+function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;draw()})}
+function live(promise,apply,fail){
+  const un=promise.onSnapshot(s=>{apply(s);render()},e=>{console.warn(e);if(fail)fail(e);render()});
+  S.subs.push(un);
+}
+function startSubs(){
+  stopSubs();
+  const db=S.db;
+  live(db.collection('tasks').orderBy('createdAt','desc').limit(600),s=>{S.tasks=s.docs.map(d=>({id:d.id,...d.data()}))});
+  live(db.collection('profiles').orderBy('createdAt','desc').limit(1200),s=>{S.profiles={};s.docs.forEach(d=>S.profiles[d.id]={id:d.id,...d.data()})});
+  live(db.collection('private'),s=>{s.docs.forEach(d=>S.privs[d.id]=d.data())});
+  live(db.collection('events').orderBy('at','desc').limit(400),s=>{S.events=s.docs.map(d=>({id:d.id,...d.data()}))});
+  live(db.collection('support').orderBy('lastAt','desc').limit(150),s=>{S.threads=s.docs.map(d=>({id:d.id,...d.data()}))});
+  live(db.collection('config').doc('money'),d=>{if(d.exists)S.cfg={...DEF_CFG,...d.data()}});
+  if(typeof resubLive==='function')resubLive();
+}
+
+/* ---------- derived ---------- */
+function attention(){
+  const now=Date.now(),A=[];
+  const waiting=S.threads.filter(t=>t.lastFrom===t.id).length;
+  if(waiting)A.push({n:waiting,b:'Ждут ответа в поддержке',t:'Пользователи написали и ждут оператора',go:'chats'});
+  const noOff=S.tasks.filter(t=>t.status==='open'&&!(t.offerBy||[]).length&&now-(t.createdAt||now)>30*6e4);
+  if(noOff.length)A.push({n:noOff.length,b:'Заказы без предложений больше 30 минут',t:'Подберите мастера вручную или предложите поднять цену',go:'tasks',filter:'nooffers'});
+  const late=S.tasks.filter(t=>t.status==='booked'&&t.execDate&&now-toMs(t.execDate,t.execTime)>3*36e5);
+  if(late.length)A.push({n:late.length,b:'Срок прошёл, а заказ не закрыт',t:'Уточните у сторон, выполнена ли работа',go:'tasks',filter:'late'});
+  const fin=S.tasks.filter(t=>t.status==='booked'&&t.stage==='finished'&&now-(t.stageAt||now)>2*36e5);
+  if(fin.length)A.push({n:fin.length,b:'Мастер закончил, заказчик не подтвердил',t:'Напомните заказчику подтвердить и оценить',go:'tasks',filter:'finished'});
+  const unc=S.tasks.filter(t=>!t.checked&&t.status!=='cancelled').length;
+  if(unc)A.push({n:unc,b:'Новые заказы не проверены',t:'Проверьте описание, адрес и цену',go:'tasks',filter:'unchecked'});
+  const unv=Object.values(S.profiles).filter(p=>p.role==='executor'&&!p.verified&&!p.blocked).length;
+  if(unv)A.push({n:unv,b:'Исполнители без проверки',t:'Посмотрите анкеты и фото работ',go:'people',ptab:'unverified'});
+  return A;
+}
+function taskFilter(f){
+  const now=Date.now();
+  if(f==='unchecked')return t=>!t.checked&&t.status!=='cancelled';
+  if(f==='nooffers')return t=>t.status==='open'&&!(t.offerBy||[]).length;
+  if(f==='finished')return t=>t.status==='booked'&&t.stage==='finished';
+  if(f==='late')return t=>t.status==='booked'&&t.execDate&&now-toMs(t.execDate,t.execTime)>3*36e5;
+  if(f==='all')return()=>true;
+  return t=>t.status===f;
+}
+function peopleFilter(k){
+  if(k==='online')return isOnline;
+  if(k==='unverified')return p=>p.role==='executor'&&!p.verified&&!p.blocked;
+  if(k==='blocked')return p=>!!p.blocked;
+  return p=>p.role===k;
+}
+const STATUS_SHORT={open:'Ждёт',booked:'В работе',done:'Выполнено',cancelled:'Отменено'};
+const statusBadge=(t,short)=>{const s=STATUS[t.status]||['—','plain'];const txt=short?(STATUS_SHORT[t.status]||s[0]):s[0];return `<span class="badge ${s[1]}" title="${esc(s[0])}">${esc(txt)}</span>`};
+const checkMark=t=>t.checked?'':'<span title="Не проверен" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-right:6px;vertical-align:middle"></span>';
+
+/* ---------- task row ---------- */
+function taskRow(t){
+  const ex=t.executorId?nameOf(t.executorId,'—'):'<span class="muted">не выбран</span>';
+  const when=t.status==='booked'&&t.execDate?`${fmtDate(t.execDate)}${t.execTime?', '+t.execTime:''}`:fmtStamp(t.createdAt);
+  return `<tr data-act="task" data-id="${t.id}">
+    <td><div class="t-main">${checkMark(t)}${esc(t.title||'Без названия')}</div><div class="t-sub">${esc(t.category||'')}${t.address?' · '+esc(t.address):''}</div></td>
+    <td class="nowrap">${statusBadge(t)}</td>
+    <td><div class="person"><span class="ava">${esc(initials(nameOf(t.customerId,'?')))}</span><span style="min-width:0"><span class="nm" style="display:block">${esc(nameOf(t.customerId,'—'))}</span></span></div></td>
+    <td>${t.executorId?`<div class="person"><span class="ava ${isOnline(P(t.executorId))?'on':''}">${esc(initials(nameOf(t.executorId,'?')))}</span><span style="min-width:0"><span class="nm" style="display:block">${esc(ex)}</span></span></div>`:ex}</td>
+    <td class="num">${fmtPrice(finalOf(t)||t.price)}</td>
+    <td class="nowrap muted hide-sm">${esc(when)}</td>
+  </tr>`;
+}
+function taskTableHead(){return `<colgroup><col style="width:30%"><col style="width:14%"><col style="width:17%"><col style="width:17%"><col style="width:11%"><col style="width:11%"></colgroup>
+  <thead><tr><th>Заказ</th><th>Статус</th><th>Заказчик</th><th>Исполнитель</th><th>Сумма</th><th class="hide-sm">Когда</th></tr></thead>`}
+
+/* compact table for the dashboard: no customer/date columns */
+function taskRowCompact(t){
+  return `<tr data-act="task" data-id="${t.id}">
+    <td><div class="t-main">${checkMark(t)}${esc(t.title||'Без названия')}</div><div class="t-sub">${esc(t.category||'')}${t.address?' · '+esc(t.address):''}</div></td>
+    <td class="nowrap">${statusBadge(t,true)}</td>
+    <td>${t.executorId?`<div class="person"><span class="ava ${isOnline(P(t.executorId))?'on':''}">${esc(initials(nameOf(t.executorId,'?')))}</span><span style="min-width:0"><span class="nm" style="display:block">${esc(nameOf(t.executorId,'—'))}</span></span></div>`:'<span class="muted" style="font-size:12.5px">не выбран</span>'}</td>
+    <td class="num">${fmtPrice(finalOf(t)||t.price)}</td>
+  </tr>`;
+}
+function taskTableHeadCompact(){return `<colgroup><col style="width:46%"><col style="width:19%"><col style="width:22%"><col style="width:13%"></colgroup>
+  <thead><tr><th>Заказ</th><th>Статус</th><th>Исполнитель</th><th>Сумма</th></tr></thead>`}
+
+/* ---------- event row ---------- */
+function eventRow(e){
+  const def=EV[e.type]||[e.type,'pulse','mgr'],label=def[0],ic=def[1],grp=def[2];
+  const t=e.taskId?T(e.taskId):null;
+  const person=(P(e.actorId)&&P(e.actorId).name)||e.actorName||'…';
+  const clickable=e.taskId?`data-act="task" data-id="${e.taskId}"`:(e.targetId||e.actorId)?`data-act="person" data-id="${esc(e.targetId||e.actorId)}"`:'';
+  const title=t&&!String(e.text||'').includes(t.title)?` · ${esc(tq(t))}`:'';
+  return `<li class="tl" ${clickable}>
+    <span class="ic ${grp}">${I[ic]||I.pulse}</span>
+    <div class="body">
+      <b>${esc(person)}</b> <span class="muted" style="font-size:12.5px">· ${esc(ROLE[e.actorRole]||e.actorRole||'')}</span>
+      <div class="what">${esc(label)}${e.text?` — ${esc(e.text)}`:''}${title}</div>
+    </div>
+    <time class="time">${esc(fmtStamp(e.at))}</time>
+  </li>`;
+}
+
+/* ---------- overview ---------- */
+function viewOverview(){
+  const ps=Object.values(S.profiles);
+  const done=S.tasks.filter(t=>t.status==='done'),booked=S.tasks.filter(t=>t.status==='booked');
+  const day0=new Date();day0.setHours(0,0,0,0);const d0=day0.getTime();
+  const m0=new Date();m0.setDate(1);m0.setHours(0,0,0,0);
+  const income=sum(done,feeOf),incomeM=sum(done.filter(t=>(t.doneAt||0)>=m0.getTime()),feeOf),expected=sum(booked,feeFor);
+  const online=ps.filter(isOnline).length;
+  const newToday=S.tasks.filter(t=>(t.createdAt||0)>=d0).length;
+  const donePct=S.tasks.length?Math.round(done.length/S.tasks.length*100):0;
+  const A=attention();
+  const cnt=k=>S.tasks.filter(t=>t.status===k).length;
+  const total=S.tasks.length||1;
+  const seg=[['open','#2563eb'],['booked','#d97706'],['done','#16a34a'],['cancelled','#dc2626']];
+  const recent=S.tasks.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,7);
+  const avg=done.filter(t=>t.review&&t.review.rating);
+  const avgR=avg.length?(sum(avg,t=>t.review.rating)/avg.length).toFixed(1).replace('.',','):'—';
+
+  return `<div class="page-head">
+    <div><h2>Обзор платформы</h2><p>Заказы, люди и деньги — в реальном времени.</p></div>
+    <div class="spacer"></div>
+    <button class="btn btn-sm" data-act="money">${I.cog} Условия дохода</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">${I.list} Всего заказов</div><div class="num">${S.tasks.length}</div><div class="sub">${newToday?`+${newToday} сегодня`:'сегодня без новых'}</div></div>
+    <div class="kpi"><div class="lbl">${I.route} В работе</div><div class="num">${booked.length}</div><div class="sub">ожидается ${fmtPrice(expected)}</div></div>
+    <div class="kpi"><div class="lbl">${I.check} Выполнено</div><div class="num">${done.length} <small>· ${donePct}%</small></div><div class="sub">★ ${avgR} средняя оценка</div></div>
+    <div class="kpi accent"><div class="lbl">${I.money} Доход платформы</div><div class="num">${fmtPrice(income)}</div><div class="sub">${fmtPrice(incomeM)} в этом месяце</div></div>
+  </div>
+
+  ${A.length?`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Требует внимания</h3><span class="sub">${A.length} ${plural(A.length,'пункт','пункта','пунктов')}</span></div>
+  <div class="panel-b"><div class="attn">${A.map(a=>`<button data-act="goto" data-go="${a.go}" ${a.filter?`data-filter="${a.filter}"`:''} ${a.ptab?`data-ptab="${a.ptab}"`:''}>
+    <span class="n">${a.n}</span><span class="t"><b>${a.b}</b><span>${a.t}</span></span><span class="chev">${I.arrow}</span></button>`).join('')}</div></div></div>`:''}
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-h"><h3>Последние заказы</h3><button class="sub" data-act="tab" data-tab="tasks" style="font-weight:600;color:var(--blue)">Все заказы →</button></div>
+      <div class="panel-b flush"><table class="tbl">${taskTableHeadCompact()}<tbody>${recent.length?recent.map(taskRowCompact).join(''):`<tr><td colspan="4"><div class="empty"><b>Заказов пока нет</b>Как только появится первый заказ, он будет здесь.</div></td></tr>`}</tbody></table></div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-h"><h3>Заказы по статусам</h3></div>
+        <div class="panel-b">
+          <div class="bar">${S.tasks.length?seg.map(([k,c])=>`<span style="width:${cnt(k)/total*100}%;background:${c}"></span>`).join(''):''}</div>
+          <div class="legend">${seg.map(([k,c])=>`<span><i style="background:${c}"></i>${STATUS[k][0]}: <b style="color:var(--text)">${cnt(k)}</b></span>`).join('')}</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Люди</h3></div>
+        <div class="panel-b">
+          <dl class="dl" style="grid-template-columns:1fr auto;margin-bottom:10px">
+            <dt>Сейчас онлайн</dt><dd>${online}</dd>
+            <dt>Исполнители</dt><dd>${ps.filter(p=>p.role==='executor').length}</dd>
+            <dt>Заказчики</dt><dd>${ps.filter(p=>p.role==='customer').length}</dd>
+            <dt>Без проверки</dt><dd>${ps.filter(p=>p.role==='executor'&&!p.verified&&!p.blocked).length}</dd>
+          </dl>
+          <button class="btn btn-sm btn-block" data-act="tab" data-tab="people">Открыть раздел «Люди»</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <div class="panel-h"><h3>Последние действия</h3><button class="sub" data-act="tab" data-tab="events" style="font-weight:600;color:var(--blue)">Вся лента →</button></div>
+    <div class="panel-b flush">${S.events.length?`<ul class="timeline">${S.events.slice(0,9).map(eventRow).join('')}</ul>`:`<div class="empty"><b>Пока тихо</b>Здесь появятся действия заказчиков и исполнителей.</div>`}</div>
+  </div>`;
+}
+
+/* ---------- nav & router ---------- */
+const NAV=[
+  ['overview','Обзор',I.chart],
+  ['tasks','Заказы',I.list],
+  ['people','Люди',I.users],
+  ['events','Лента',I.pulse],
+  ['chats','Чаты',I.chat]
+];
+const TAB_INFO={
+  overview:['Обзор','Платформа в реальном времени'],
+  tasks:['Заказы','Проверка, назначение и контроль заказов'],
+  people:['Люди','Заказчики, исполнители и операторы'],
+  events:['Лента действий','Всё, что происходит на платформе'],
+  chats:['Чаты','Поддержка и переписки по заказам']
+};
+function navCount(k){
+  if(k==='tasks')return S.tasks.filter(t=>!t.checked&&t.status!=='cancelled').length;
+  if(k==='chats')return S.threads.filter(t=>t.lastFrom===t.id).length;
+  if(k==='people')return Object.values(S.profiles).filter(p=>p.role==='executor'&&!p.verified&&!p.blocked).length;
+  return 0;
+}
+function drawNav(){
+  $('#nav').innerHTML=NAV.map(([k,l,ic])=>{
+    const n=navCount(k);
+    return `<button data-act="tab" data-tab="${k}" ${S.tab===k?'aria-current="page"':''} title="${esc(l)}">${ic}<span class="lbl">${esc(l)}</span>${n?`<span class="cnt ${k==='chats'?'hot':''}">${n}</span>`:''}</button>`;
+  }).join('');
+}
+function draw(){
+  if(!S.ready)return;
+  drawNav();
+  const info=TAB_INFO[S.tab]||TAB_INFO.overview;
+  $('#pageTitle').textContent=info[0];
+  $('#pageSub').textContent=info[1];
+  const A=attention().reduce((n,a)=>n+a.n,0);
+  const bell=$('#bellDot');bell.hidden=!A;bell.textContent=A>99?'99+':A;
+  const v=$('#view');
+  const ae=document.activeElement,focusId=ae&&ae.id,sel=ae&&ae.selectionStart;
+  if(S.tab==='overview')v.innerHTML=viewOverview();
+  else if(S.tab==='tasks')v.innerHTML=viewTasks();
+  else if(S.tab==='people')v.innerHTML=viewPeople();
+  else if(S.tab==='events')v.innerHTML=viewEvents();
+  else if(S.tab==='chats')v.innerHTML=viewChats();
+  if(focusId){const el=document.getElementById(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
+  if(typeof afterDraw==='function')afterDraw();
+}
+function go(tab,patch={}){
+  S.tab=tab;Object.assign(S,patch);
+  $('#sidebar').classList.remove('open');
+  const gs=$('#globalSearch');
+  if(gs)gs.value=tab==='tasks'?S.tasksQ:tab==='people'?S.peopleQ:tab==='events'?S.evQ:'';
+  draw();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+/* ============================================================
+   ЗАКАЗЫ
+   ============================================================ */
+function tasksListHTML(){
+  const q=S.tasksQ.trim().toLowerCase();
+  let ts=S.tasks.filter(taskFilter(S.tasksFilter));
+  if(q)ts=ts.filter(t=>[t.title,t.description,t.address,t.category,t.customerName,nameOf(t.customerId,''),t.executorId?nameOf(t.executorId,''):'',t.id].join(' ').toLowerCase().includes(q));
+  ts=ts.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,300);
+  if(!ts.length)return `<div class="empty">${I.list}<b>Ничего не найдено</b>Попробуйте другой фильтр или запрос.</div>`;
+  return `<div class="tbl-wrap"><table class="tbl">${taskTableHead()}<tbody>${ts.map(taskRow).join('')}</tbody></table></div>
+    <p class="muted" style="font-size:12px;margin:9px 2px 0">Показано ${ts.length} из ${S.tasks.length} заказов. Нажмите на строку, чтобы открыть карточку.</p>`;
+}
+function renderTasksList(){const el=$('#tasksList');if(el)el.innerHTML=tasksListHTML()}
+function viewTasks(){
+  const chips=MT_FILTERS.map(([k,l])=>{
+    const n=S.tasks.filter(taskFilter(k)).length;
+    return `<button class="chip" data-act="tfilter" data-f="${k}" aria-pressed="${S.tasksFilter===k}">${l} <span class="cnt">${n}</span></button>`;
+  }).join('');
+  return `<div class="page-head"><div><h2>Заказы</h2><p>${S.tasks.length} всего · ${S.tasks.filter(t=>!t.checked&&t.status!=='cancelled').length} ждут проверки</p></div></div>
+    <div class="searchbar">${I.search}<input id="tasksSearch" type="search" placeholder="Поиск: заказ, адрес, имя, номер" value="${esc(S.tasksQ)}" autocomplete="off"></div>
+    <div class="chips" id="tasksChips">${chips}</div>
+    <div id="tasksList">${tasksListHTML()}</div>`;
+}
+
+/* ---------- drawer shell ---------- */
+function closeDrawer(){
+  S.openTaskId=null;S.openPersonId=null;
+  if(S.offerSub){try{S.offerSub()}catch(e){}S.offerSub=null}
+  S.offers=[];
+  $('#drawerHost').innerHTML='';
+}
+function drawerShell(title,sub,body,footer){
+  $('#drawerHost').innerHTML=`<div class="overlay" data-act="closeDrawer"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <div class="drawer-h"><div style="min-width:0"><div class="ttl">${title}</div><div class="sub">${sub||''}</div></div><div class="spacer"></div><button class="xbtn" data-act="closeDrawer" aria-label="Закрыть">${I.x}</button></div>
+    <div class="drawer-b">${body}</div>
+    ${footer?`<div class="drawer-f">${footer}</div>`:''}
+  </aside>`;
+}
+
+/* ---------- task drawer ---------- */
+function subOffers(id){
+  if(S.offerSub){try{S.offerSub()}catch(e){}S.offerSub=null}
+  S.offers=[];
+  S.offerSub=S.db.collection('tasks').doc(id).collection('offers').onSnapshot(s=>{
+    S.offers=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.price||0)-(b.price||0));
+    if(S.openTaskId===id)drawTaskDrawer();
+  },e=>console.warn(e));
+}
+function openTask(id){
+  if(!T(id))return;
+  if(S.openTaskId!==id){
+    S.openTaskId=id;S.openPersonId=null;
+    subOffers(id);
+  }
+  drawTaskDrawer();
+}
+function offerRow(t,o){
+  const p=P(o.executorId),decl=isDeclined(t,o),live=offerIds(t).includes(o.executorId);
+  const when=o.date||o.time?`${fmtDate(o.date)}${o.time?', '+o.time:''}`:'как в заказе';
+  return `<div class="taskoff" style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--line-2)">
+    <span class="ava" style="width:34px;height:34px;border-radius:50%;background:var(--slate-soft);display:grid;place-items:center;font-weight:700;flex:0 0 auto">${esc(initials(p?p.name:'?'))}</span>
+    <div style="min-width:0;flex:1">
+      <div class="row" style="gap:8px"><b style="font-size:13.5px">${esc(p?p.name:'Исполнитель')}</b>
+        ${p&&p.verified?'<span class="badge ok">✓ Проверен</span>':''}${p&&p.blocked?'<span class="badge bad">Заблокирован</span>':''}
+        ${decl?'<span class="badge gray">Отклонён</span>':''}
+        <span class="spacer"></span><b class="num" style="font-size:13.5px">${fmtPrice(o.price)}</b></div>
+      <div class="muted" style="font-size:12.5px">${esc(when)}${o.comment?' · '+esc(o.comment):''}</div>
+      <div class="row" style="margin-top:7px;gap:6px">
+        <button class="btn btn-sm" data-act="person" data-id="${esc(o.executorId)}">Анкета</button>
+        ${t.status==='open'&&live&&!decl?`<button class="btn btn-sm btn-main" data-act="assignOffer" data-id="${t.id}" data-e="${esc(o.executorId)}">Назначить за ${fmtPrice(o.price)}</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+function drawTaskDrawer(){
+  const t=T(S.openTaskId);if(!t){closeDrawer();return}
+  const customer=nameOf(t.customerId,'Заказчик'),executor=t.executorId?nameOf(t.executorId,'Исполнитель'):null;
+  const ph=phoneOf(t.customerId),exph=t.executorId?phoneOf(t.executorId):'';
+  const when=t.date||t.time?`${fmtDate(t.date)}${t.time?', '+t.time:''}`:'не указано';
+  const evs=S.events.filter(e=>e.taskId===t.id).slice(0,12);
+  const offers=(S.offers||[]).filter(o=>offerIds(t).includes(o.executorId));
+  const stage=t.status==='booked'&&t.stage?(STAGE[t.stage]||[t.stage])[0]:null;
+  const body=`
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:14px">${statusBadge(t)}${stage?`<span class="badge plain">${esc(stage)}</span>`:''}${t.checked?'<span class="badge gray">Проверен</span>':'<span class="badge warn">Не проверен</span>'}${t.assignedByMgr?'<span class="badge gray">Назначен оператором</span>':''}</div>
+    <dl class="dl">
+      <dt>Цена заказчика</dt><dd>${fmtPrice(t.price)}</dd>
+      <dt>Цена исполнителя</dt><dd>${t.finalPrice!=null?fmtPrice(t.finalPrice):'<span class="muted">ещё не выбрана</span>'}</dd>
+      <dt>Когда нужно</dt><dd>${esc(when)}</dd>
+      <dt>Категория</dt><dd>${esc(t.category||'—')}</dd>
+      <dt>Адрес</dt><dd>${esc(t.address||'—')}</dd>
+      <dt>Заказчик</dt><dd>${esc(customer)}${ph?` · <a href="tel:${esc(ph.replace(/\s/g,''))}">${esc(ph)}</a>`:''}</dd>
+      <dt>Исполнитель</dt><dd>${executor?`${esc(executor)}${exph?` · <a href="tel:${esc(exph.replace(/\s/g,''))}">${esc(exph)}</a>`:''}`:'<span class="muted">не выбран</span>'}</dd>
+      <dt>Фото</dt><dd>${t.photoCount?t.photoCount+' шт.':(t.photoCount===0?'нет':'—')}</dd>
+      <dt>Создан</dt><dd>${esc(fmtStamp(t.createdAt))}</dd>
+      ${t.doneAt?`<dt>Выполнен</dt><dd>${esc(fmtStamp(t.doneAt))}</dd>`:''}
+      ${t.cancelReason?`<dt>Причина отмены</dt><dd>${esc(t.cancelReason)}</dd>`:''}
+      ${t.review&&t.review.rating?`<dt>Отзыв</dt><dd>★ ${t.review.rating}${t.review.text?' · '+esc(t.review.text):''}</dd>`:''}
+      <dt>Номер</dt><dd class="mono" style="font-size:12px;color:var(--muted)">${esc(t.id)}</dd>
+    </dl>
+    ${t.description?`<div class="sect-t">Описание</div><div class="note wrap-any">${esc(t.description)}</div>`:''}
+    <div class="sect-t">Предложения исполнителей ${offers.length?`(${offers.length})`:''}</div>
+    ${offers.length?offers.map(o=>offerRow(t,o)).join(''):'<div class="note">Пока нет активных предложений. Можно назначить исполнителя вручную.</div>'}
+    <div class="sect-t">История заказа</div>
+    ${evs.length?`<ul class="timeline" style="border:1px solid var(--line);border-radius:10px;overflow:hidden">${evs.map(eventRow).join('')}</ul>`:'<div class="note">Событий пока нет.</div>'}
+  `;
+  const footer=`
+    ${!t.checked&&t.status!=='cancelled'?`<button class="btn btn-sm" data-act="check" data-id="${t.id}">Проверить</button>`:''}
+    ${t.status==='open'?`<button class="btn btn-sm btn-main" data-act="assignOpen" data-id="${t.id}">Назначить исполнителя</button>`:''}
+    ${t.status==='booked'?`<button class="btn btn-sm btn-main" data-act="done" data-id="${t.id}">Отметить выполненным</button><button class="btn btn-sm" data-act="unbook" data-id="${t.id}">Снять исполнителя</button>`:''}
+    ${(t.status==='done'||t.status==='cancelled')?`<button class="btn btn-sm" data-act="reopen" data-id="${t.id}">Вернуть в работу</button>`:''}
+    ${t.status==='booked'?`<button class="btn btn-sm" data-act="taskchat" data-id="${t.id}">Чат заказа</button>`:''}
+    ${t.status!=='cancelled'?`<button class="btn btn-sm btn-danger" data-act="cancel" data-id="${t.id}">Снять заказ</button>`:''}
+  `;
+  drawerShell(esc(t.title||'Заказ'), `${esc(t.category||'')} · создан ${esc(ago(t.createdAt))}`, body, footer);
+}
+
+/* ============================================================
+   ЛЮДИ
+   ============================================================ */
+function personStats(id){
+  const asExec=S.tasks.filter(t=>t.executorId===id);
+  const done=asExec.filter(t=>t.status==='done');
+  const rated=done.filter(t=>t.review&&t.review.rating);
+  return {
+    asCustomer:S.tasks.filter(t=>t.customerId===id).length,
+    asExec:asExec.length,
+    done:done.length,
+    offers:asExec.filter(t=>(t.offerBy||[]).includes(id)).length,
+    avg:rated.length?sum(rated,t=>t.review.rating)/rated.length:0,
+    rated:rated.length
+  };
+}
+function personRow(p){
+  const ex=p.role==='executor',st=personStats(p.id),ph=phoneOf(p.id);
+  return `<tr data-act="person" data-id="${p.id}">
+    <td><div class="person"><span class="ava ${isOnline(p)?'on':''}">${esc(initials(p.name))}</span><span style="min-width:0"><span class="nm" style="display:block">${esc(p.name||'Без имени')}</span><span class="sb">${esc(p.id)}</span></span></div></td>
+    <td><span class="badge ${p.role==='executor'?'plain':p.role==='manager'?'ok':'gray'}">${esc(ROLE[p.role]||p.role||'—')}</span></td>
+    <td class="nowrap">${ph?`<a href="tel:${esc(ph.replace(/\s/g,''))}" data-act="noop">${esc(ph)}</a>`:'<span class="muted">—</span>'}</td>
+    <td>${ex?`<div class="t-main" style="font-size:12.5px">${esc((p.specialties||[]).join(', ')||'—')}</div><div class="t-sub">стаж ${esc(expText(p.experience))}</div>`:`<div class="t-main" style="font-size:12.5px">${st.asCustomer} ${plural(st.asCustomer,'заказ','заказа','заказов')}</div><div class="t-sub">с ${new Date(p.createdAt||Date.now()).toLocaleDateString('ru-RU')}</div>`}</td>
+    <td class="nowrap">${isOnline(p)?'<span class="badge ok">Онлайн</span>':`<span class="muted" style="font-size:12px">${esc(ago(p.lastSeen))}</span>`}</td>
+    <td class="nowrap">${p.blocked?'<span class="badge bad">Блок</span>':ex?(p.verified?'<span class="badge ok">Проверен</span>':'<span class="badge warn">Не проверен</span>'):''}</td>
+  </tr>`;
+}
+function peopleListHTML(){
+  const q=S.peopleQ.trim().toLowerCase();
+  let ps=Object.values(S.profiles).filter(peopleFilter(S.peopleTab));
+  if(q)ps=ps.filter(p=>[p.name,phoneOf(p.id),(S.privs[p.id]||{}).tgUser,(p.specialties||[]).join(' '),p.id].join(' ').toLowerCase().includes(q));
+  ps.sort((a,b)=>(b.lastSeen||b.createdAt||0)-(a.lastSeen||a.createdAt||0));
+  if(!ps.length)return `<div class="empty">${I.users}<b>Никого не найдено</b>Попробуйте другой фильтр или запрос.</div>`;
+  return `<div class="tbl-wrap"><table class="tbl"><colgroup><col style="width:24%"><col style="width:12%"><col style="width:16%"><col style="width:24%"><col style="width:12%"><col style="width:12%"></colgroup>
+    <thead><tr><th>Человек</th><th>Роль</th><th>Телефон</th><th>Профиль</th><th>Активность</th><th></th></tr></thead>
+    <tbody>${ps.slice(0,400).map(personRow).join('')}</tbody></table></div>
+    <p class="muted" style="font-size:12px;margin:9px 2px 0">Показано ${Math.min(ps.length,400)} из ${Object.keys(S.profiles).length} профилей.</p>`;
+}
+function renderPeopleList(){const el=$('#peopleList');if(el)el.innerHTML=peopleListHTML()}
+function viewPeople(){
+  const chips=P_TABS.map(([k,l])=>{
+    const n=Object.values(S.profiles).filter(peopleFilter(k)).length;
+    return `<button class="chip" data-act="ptab" data-k="${k}" aria-pressed="${S.peopleTab===k}">${l} <span class="cnt">${n}</span></button>`;
+  }).join('');
+  return `<div class="page-head"><div><h2>Люди</h2><p>${Object.keys(S.profiles).length} профилей · ${Object.values(S.profiles).filter(isOnline).length} сейчас онлайн</p></div></div>
+    <div class="searchbar">${I.search}<input id="peopleSearch" type="search" placeholder="Поиск: имя, телефон, специальность" value="${esc(S.peopleQ)}" autocomplete="off"></div>
+    <div class="chips">${chips}</div>
+    <div id="peopleList">${peopleListHTML()}</div>`;
+}
+
+/* ---------- person drawer ---------- */
+function openPerson(id){
+  if(!P(id)){toast('Профиль не найден',true);return}
+  S.openPersonId=id;S.openTaskId=null;
+  if(S.offerSub){try{S.offerSub()}catch(e){}S.offerSub=null}
+  S.offers=[];
+  drawPersonDrawer();
+}
+function drawPersonDrawer(){
+  const p=P(S.openPersonId);if(!p){closeDrawer();return}
+  const ex=p.role==='executor',st=personStats(p.id),pv=S.privs[p.id]||{},ph=phoneOf(p.id);
+  const tasks=(ex?S.tasks.filter(t=>t.executorId===p.id):S.tasks.filter(t=>t.customerId===p.id)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,8);
+  const body=`
+    <div class="row" style="gap:14px;margin-bottom:16px">
+      <span class="ava ${isOnline(p)?'on':''}" style="width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,#334155,#0f172a);color:#fff;display:grid;place-items:center;font-size:23px;font-weight:700;flex:0 0 auto">${esc(initials(p.name))}</span>
+      <div style="min-width:0">
+        <div class="row" style="gap:7px;flex-wrap:wrap"><b style="font-size:18px">${esc(p.name||'Без имени')}</b>
+          ${p.blocked?'<span class="badge bad">Заблокирован</span>':ex?(p.verified?'<span class="badge ok">✓ Проверен</span>':'<span class="badge warn">Не проверен</span>'):''}
+        </div>
+        <div class="muted" style="font-size:13px;margin-top:3px">${esc(ROLE[p.role]||p.role||'')} · ${isOnline(p)?'сейчас онлайн':'был '+esc(ago(p.lastSeen))}</div>
+      </div>
+    </div>
+    <dl class="dl">
+      <dt>Телефон</dt><dd>${ph?`<a href="tel:${esc(ph.replace(/\s/g,''))}">${esc(ph)}</a>`:'<span class="muted">не указан</span>'}</dd>
+      <dt>Telegram</dt><dd>${pv.tgUser?`<a href="https://t.me/${esc(pv.tgUser)}" target="_blank" rel="noopener">@${esc(pv.tgUser)}</a>`:'<span class="muted">нет</span>'}</dd>
+      ${ex?`<dt>Специальности</dt><dd>${esc((p.specialties||[]).join(', ')||'не указаны')}</dd>
+      <dt>Стаж</dt><dd>${esc(expText(p.experience))}</dd>
+      <dt>Радиус</dt><dd>${p.radiusKm?esc(p.radiusKm)+' км':'—'}</dd>`:''}
+      <dt>На платформе</dt><dd>${esc(fmtStamp(p.createdAt))}</dd>
+      <dt>Последний вход</dt><dd>${esc(fmtStamp(p.lastSeen))}</dd>
+      <dt>ID</dt><dd class="mono" style="font-size:12px;color:var(--muted)">${esc(p.id)}</dd>
+    </dl>
+    ${p.about?`<div class="sect-t">О себе</div><div class="note wrap-any">${esc(p.about)}</div>`:''}
+    <div class="sect-t">Статистика</div>
+    <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:0">
+      <div class="kpi" style="padding:12px"><div class="lbl">${ex?'Заказов':'Заказов'}</div><div class="num" style="font-size:20px">${ex?st.asExec:st.asCustomer}</div></div>
+      <div class="kpi" style="padding:12px"><div class="lbl">Выполнено</div><div class="num" style="font-size:20px">${ex?st.done:'—'}</div></div>
+      <div class="kpi" style="padding:12px"><div class="lbl">Оценка</div><div class="num" style="font-size:20px">${st.rated?'★ '+st.avg.toFixed(1).replace('.',','):'—'}</div><div class="sub">${st.rated?st.rated+' '+plural(st.rated,'отзыв','отзыва','отзывов'):'нет отзывов'}</div></div>
+    </div>
+    ${p.mgrNote?`<div class="sect-t">Заметка оператора</div><div class="note">${esc(p.mgrNote)}</div>`:''}
+    <div class="sect-t">${ex?'Заказы исполнителя':'Заказы заказчика'}</div>
+    ${tasks.length?`<div class="tbl-wrap"><table class="tbl"><tbody>${tasks.map(t=>`<tr data-act="task" data-id="${t.id}"><td><div class="t-main">${esc(t.title||'—')}</div><div class="t-sub">${esc(fmtStamp(t.createdAt))}</div></td><td class="nowrap">${statusBadge(t,true)}</td><td class="num nowrap">${fmtPrice(finalOf(t)||t.price)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="note">Заказов пока нет.</div>'}
+  `;
+  const footer=`
+    ${ex?`<button class="btn btn-sm ${p.verified?'':'btn-main'}" data-act="verify" data-id="${p.id}">${p.verified?'Снять проверку':'✓ Проверить анкету'}</button>`:''}
+    <button class="btn btn-sm btn-danger" data-act="block" data-id="${p.id}">${p.blocked?'Разблокировать':'Заблокировать'}</button>
+    <button class="btn btn-sm" data-act="openSupport" data-id="${p.id}">Написать в поддержку</button>
+    <button class="btn btn-sm" data-act="copyId" data-id="${p.id}">Скопировать ID</button>
+  `;
+  drawerShell(esc(p.name||'Профиль'), esc(ROLE[p.role]||'')+' · '+esc(p.id), body, footer);
+}
+
+/* ============================================================
+   ЛЕНТА
+   ============================================================ */
+function eventsListHTML(){
+  const q=S.evQ.trim().toLowerCase();
+  let es=S.events;
+  if(S.evFilter!=='all')es=es.filter(e=>(EV[e.type]||[])[2]===S.evFilter);
+  if(q)es=es.filter(e=>[e.actorName,e.text,(EV[e.type]||[])[0],e.actorRole].join(' ').toLowerCase().includes(q));
+  if(!es.length)return `<div class="empty">${I.pulse}<b>Пока ничего</b>Действия появятся здесь в реальном времени.</div>`;
+  return `<div class="tbl-wrap"><ul class="timeline">${es.map(eventRow).join('')}</ul></div>`;
+}
+function renderEventsList(){const el=$('#eventsList');if(el)el.innerHTML=eventsListHTML()}
+function viewEvents(){
+  const chips=EV_GROUPS.map(([k,l])=>`<button class="chip" data-act="evfilter" data-f="${k}" aria-pressed="${S.evFilter===k}">${l}</button>`).join('');
+  return `<div class="page-head"><div><h2>Лента действий</h2><p>Каждое действие заказчиков, исполнителей и операторов — сразу, как оно произошло.</p></div></div>
+    <div class="searchbar">${I.search}<input id="eventsSearch" type="search" placeholder="Поиск: имя или текст" value="${esc(S.evQ)}" autocomplete="off"></div>
+    <div class="chips">${chips}</div>
+    <div id="eventsList">${eventsListHTML()}</div>`;
+}
+
+/* ============================================================
+   ЧАТЫ
+   ============================================================ */
+function supUnread(t){return t.lastFrom===t.id}
+const supportThreads=()=>S.threads.slice().sort((a,b)=>(b.lastAt||0)-(a.lastAt||0));
+const taskThreads=()=>S.tasks.filter(t=>t.lastMsgAt).sort((a,b)=>b.lastMsgAt-a.lastMsgAt);
+
+function chatsCount(){return S.threads.filter(supUnread).length}
+function viewChats(){
+  const sup=S.chatsTab==='support';
+  const list=sup
+    ?supportThreads().map(t=>{
+      const p=P(t.id);
+      return `<button class="chat-item" data-act="openSupport" data-id="${esc(t.id)}" ${S.chatUid===t.id&&!S.chatTaskId?'aria-current="true"':''}>
+        <span class="ava" style="width:34px;height:34px;border-radius:50%;background:var(--slate-soft);display:grid;place-items:center;font-weight:700;flex:0 0 auto">${esc(initials(p?p.name:'?'))}</span>
+        <span class="body"><span class="top-line"><b>${esc(p?p.name:'Пользователь')}</b><time>${esc(fmtStamp(t.lastAt))}</time></span>
+          <span class="prev">${t.lastText?esc(t.lastText):'Нет сообщений'}</span></span>
+        ${supUnread(t)?'<span class="wait" title="Ждёт ответа"></span>':''}
+      </button>`;
+    }).join('')
+    :taskThreads().map(t=>`<button class="chat-item" data-act="openTaskChat" data-id="${t.id}" ${S.chatTaskId===t.id?'aria-current="true"':''}>
+        <span class="ava" style="width:34px;height:34px;border-radius:9px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;flex:0 0 auto">${I.chat}</span>
+        <span class="body"><span class="top-line"><b>${esc(t.title||'Заказ')}</b><time>${esc(fmtStamp(t.lastMsgAt))}</time></span>
+          <span class="prev">${esc(nameOf(t.customerId,'Заказчик'))} ↔ ${esc(nameOf(t.executorId,'Исполнитель'))}</span></span>
+      </button>`).join('');
+
+  const emptyList=sup
+    ?`<div class="empty" style="padding:34px 16px">${I.chat}<b>Обращений нет</b>Когда пользователь напишет в поддержку, чат появится здесь.</div>`
+    :`<div class="empty" style="padding:34px 16px">${I.chat}<b>Переписок нет</b>Чаты по заказам появятся, когда заказчик и исполнитель начнут общаться.</div>`;
+
+  const active=sup?S.chatUid:S.chatTaskId;
+  const box=active?chatBoxHTML():`<div class="chat-box"><div class="empty" style="margin:auto">${I.chat}<b>Выберите чат</b>Слева — список ${sup?'обращений в поддержку':'переписок по заказам'}.</div></div>`;
+
+  return `<div class="page-head"><div><h2>Чаты</h2><p>${sup?`${supportThreads().length} обращений · ${chatsCount()} ждут ответа`:`${taskThreads().length} переписок по заказам`}</p></div>
+    <div class="spacer"></div>
+    <div class="seg"><button data-act="chatstab" data-v="support" aria-pressed="${sup}">Поддержка${chatsCount()?` · ${chatsCount()}`:''}</button><button data-act="chatstab" data-v="tasks" aria-pressed="${!sup}">Чаты заказов</button></div></div>
+    <div class="chat-layout">
+      <div class="chat-list"><div class="list">${list||emptyList}</div></div>
+      ${box}
+    </div>`;
+}
+function chatBoxHTML(){
+  const tid=S.chatTaskId,t=tid?T(tid):null;
+  const uid=tid?null:S.chatUid,p=uid?P(uid):null;
+  if(tid&&!t)return `<div class="chat-box"><div class="empty" style="margin:auto"><b>Заказ не найден</b></div></div>`;
+  const title=tid?(t.title||'Заказ'):(p?p.name:'Пользователь');
+  const sub=tid?`${nameOf(t.customerId,'Заказчик')} ↔ ${nameOf(t.executorId,'Исполнитель')}`:(phoneOf(uid)?fmtPhone(String(phoneOf(uid)).replace(/\D/g,'')):'Клиент поддержки');
+  const msgs=S.msgs;
+  return `<div class="chat-box">
+    <div class="chat-head">
+      <span class="ava" style="width:34px;height:34px;border-radius:50%;background:var(--slate-soft);display:grid;place-items:center;font-weight:700">${esc(initials(title))}</span>
+      <div style="min-width:0"><div class="ttl">${esc(title)}</div><div class="sub">${esc(sub)}</div></div>
+      <div class="spacer"></div>
+      ${tid?`<button class="btn btn-sm" data-act="task" data-id="${tid}">Карточка заказа</button>`:`<button class="btn btn-sm" data-act="person" data-id="${esc(uid)}">Анкета</button>`}
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      ${msgs.length?msgs.map(m=>{
+        const mine=m.authorId===S.uid;
+        const who=mine?'Вы':nameOf(m.authorId,'Пользователь');
+        return `<div class="msg ${mine?'mine':''}">${mine?'':`<span class="who">${esc(who)}</span>`}${esc(m.text)}<span class="tm">${esc(fmtStamp(m.createdAt))}</span></div>`;
+      }).join(''):`<div class="empty" style="margin:auto;padding:20px"><b>Сообщений пока нет</b>Напишите первым — сообщение уйдёт в приложение.</div>`}
+    </div>
+    <form class="chat-form" data-chat-form="1" data-kind="${tid?'task':'support'}" data-id="${esc(tid||uid)}">
+      <textarea name="text" id="chatText" placeholder="Написать сообщение…" rows="1">${esc(S.chatDraft||'')}</textarea>
+      <button class="btn btn-main" type="submit">Отправить</button>
+    </form>
+  </div>`;
+}
+function openSupport(uid){
+  closeDrawer();
+  S.chatsTab='support';S.chatUid=uid;S.chatTaskId=null;S.tab='chats';S.chatDraft='';
+  subChat(S.db.collection('support').doc(uid).collection('messages'));
+  draw();
+}
+function openTaskChat(tid){
+  if(!T(tid)){toast('Заказ не найден',true);return}
+  closeDrawer();
+  S.chatsTab='tasks';S.chatTaskId=tid;S.chatUid=null;S.tab='chats';S.chatDraft='';
+  subChat(S.db.collection('tasks').doc(tid).collection('messages'));
+  draw();
+}
+function subChat(coll){
+  if(S.msgSub){try{S.msgSub()}catch(e){}S.msgSub=null}
+  S.msgs=[];
+  const key=S.chatTaskId||S.chatUid;
+  S.msgSub=coll.orderBy('createdAt').limitToLast(300).onSnapshot(s=>{
+    S.msgs=s.docs.map(d=>({id:d.id,...d.data()}));
+    if((S.chatTaskId||S.chatUid)===key)draw();
+  },e=>{console.warn(e);toast('Не удалось загрузить сообщения',true)});
+}
+
+/* ============================================================
+   МОДАЛКИ
+   ============================================================ */
+let modalOk=null;
+function showModal(html){$('#modalHost').innerHTML=`<div class="modal-wrap"><div class="overlay" data-act="modalClose" style="z-index:0"></div>${html}</div>`}
+function closeModal(){$('#modalHost').innerHTML='';modalOk=null}
+function confirmDialog(title,text,okText,fn,danger){
+  modalOk=fn;
+  showModal(`<div class="modal" role="dialog" aria-modal="true" style="position:relative;z-index:1">
+    <div class="modal-h"><h3>${esc(title)}</h3>${text?`<p>${esc(text)}</p>`:''}</div>
+    <div class="modal-f"><button class="btn" data-act="modalClose">Отмена</button><button class="btn ${danger?'btn-danger':'btn-main'}" data-act="modalOk">${esc(okText||'Подтвердить')}</button></div>
+  </div>`);
+}
+const CANCEL_REASONS=['Заказчик попросил отменить','Дубликат заказа','Некорректное описание','Подозрение на мошенничество','Другое'];
+const UNBOOK_REASONS=['Не выходит на связь','Не подходит по срокам','Отказался от заказа','Нарушил договорённость','Другое'];
+function reasonDialog(kind,id){
+  const t=T(id);if(!t)return;
+  const list=kind==='cancel'?CANCEL_REASONS:UNBOOK_REASONS;
+  const title=kind==='cancel'?'Снять заказ':'Снять исполнителя';
+  const sub=kind==='cancel'?`Заказ «${t.title}» перейдёт в статус «Отменено».`:`${nameOf(t.executorId,'Исполнитель')} будет снят, заказ снова начнёт ждать предложений.`;
+  showModal(`<div class="modal" role="dialog" aria-modal="true" style="position:relative;z-index:1">
+    <form id="reasonForm" data-kind="${kind}" data-id="${id}" novalidate>
+      <div class="modal-h"><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>
+      <div class="modal-b">
+        ${list.map((r,i)=>`<label class="opt"><input type="radio" name="why" value="${esc(r)}" ${i===0?'checked':''}><span>${esc(r)}</span></label>`).join('')}
+        <label class="fld" style="margin:10px 0 0"><span class="lbl">Комментарий <span class="hint" style="display:inline">(необязательно)</span></span><textarea class="inp" name="note" maxlength="300" placeholder="Что случилось"></textarea></label>
+        <p class="err" style="min-height:0;margin:6px 0 0"></p>
+      </div>
+      <div class="modal-f"><button class="btn" type="button" data-act="modalClose">Отмена</button><button class="btn ${kind==='cancel'?'btn-danger':'btn-main'}" type="submit">${esc(title)}</button></div>
+    </form>
+  </div>`);
+}
+function assignDialog(id){
+  const t=T(id);if(!t)return;
+  const exs=Object.values(S.profiles).filter(p=>p.role==='executor'&&!p.blocked)
+    .sort((a,b)=>(b.verified?1:0)-(a.verified?1:0)||(b.lastSeen||0)-(a.lastSeen||0)).slice(0,400);
+  const opts=exs.map(p=>`<option value="${esc(p.id)}" ${t.executorId===p.id?'selected':''}>${esc(p.name||'Без имени')}${p.specialties&&p.specialties.length?' · '+esc(p.specialties.join(', ')):''}${p.verified?' · проверен':''}</option>`).join('');
+  showModal(`<div class="modal" role="dialog" aria-modal="true" style="position:relative;z-index:1;max-width:520px">
+    <form id="assignForm" data-id="${id}" novalidate>
+      <div class="modal-h"><h3>Назначить исполнителя</h3><p>${esc(t.title||'Заказ')} · заказчик предлагает ${fmtPrice(t.price)}</p></div>
+      <div class="modal-b">
+        <label class="fld"><span class="lbl">Исполнитель</span><select class="inp" name="executor" required><option value="">Выберите исполнителя</option>${opts}</select></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label class="fld"><span class="lbl">Цена, ₸</span><input class="inp" name="price" type="number" inputmode="numeric" min="1" step="500" value="${esc(t.price||'')}"></label>
+          <label class="fld"><span class="lbl">Дата</span><input class="inp" name="date" type="date" value="${esc(t.date||todayStr())}"></label>
+        </div>
+        <label class="fld"><span class="lbl">Время</span><input class="inp" name="time" type="time" value="${esc(t.time||'10:00')}"></label>
+        <p class="err" style="min-height:0;margin:0"></p>
+      </div>
+      <div class="modal-f"><button class="btn" type="button" data-act="modalClose">Отмена</button><button class="btn btn-main" type="submit">Назначить</button></div>
+    </form>
+  </div>`);
+}
+function moneyDialog(){
+  const c=S.cfg;
+  showModal(`<div class="modal" role="dialog" aria-modal="true" style="position:relative;z-index:1">
+    <form id="moneyForm" novalidate>
+      <div class="modal-h"><h3>Условия дохода платформы</h3><p>Сейчас: ${esc(cfgText(c))}</p></div>
+      <div class="modal-b">
+        <label class="opt"><input type="radio" name="fmode" value="savings" ${c.mode!=='percent'?'checked':''}><span><b>% от экономии заказчика</b><br><span class="muted" style="font-size:12px">Разница между ценой заказчика и ценой исполнителя</span></span></label>
+        <label class="opt"><input type="radio" name="fmode" value="percent" ${c.mode==='percent'?'checked':''}><span><b>% от цены исполнителя</b><br><span class="muted" style="font-size:12px">Процент от суммы, за которую закрыли заказ</span></span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+          <label class="fld" style="margin:0"><span class="lbl">Доля экономии, %</span><input class="inp" name="share" type="number" min="0" max="100" value="${esc(c.share??30)}"></label>
+          <label class="fld" style="margin:0"><span class="lbl">Процент от цены, %</span><input class="inp" name="percent" type="number" min="0" max="100" value="${esc(c.percent??10)}"></label>
+        </div>
+        <p class="err" style="min-height:0;margin:8px 0 0"></p>
+      </div>
+      <div class="modal-f"><button class="btn" type="button" data-act="modalClose">Отмена</button><button class="btn btn-main" type="submit">Сохранить</button></div>
+    </form>
+  </div>`);
+}
+
+/* ============================================================
+   ДЕЙСТВИЯ
+   ============================================================ */
+async function guard(fn,okText){
+  try{await fn();if(okText)toast(okText)}
+  catch(e){console.warn(e);toast(typeof e==='string'?e:((e&&e.code==='permission-denied')?'Нет прав на это действие':(e&&e.code==='unavailable')?'Нет связи с интернетом':'Не получилось. Попробуйте ещё раз'),true)}
+}
+function assignToTask(id,executorId,price,date,time){
+  return S.db.collection('tasks').doc(id).update({status:'booked',executorId,finalPrice:Math.round(price),execDate:date,execTime:time,bookedAt:Date.now(),stage:null,stageAt:null,assignedByMgr:true,checked:true,rejectedIds:FV().arrayRemove(executorId)});
+}
+const ACT={
+  tab:el=>go(el.dataset.tab),
+  goto:el=>{
+    const patch={};
+    if(el.dataset.filter)patch.tasksFilter=el.dataset.filter;
+    if(el.dataset.ptab)patch.peopleTab=el.dataset.ptab;
+    go(el.dataset.go,patch);
+  },
+  tfilter:el=>{S.tasksFilter=el.dataset.f;draw()},
+  ptab:el=>{S.peopleTab=el.dataset.k;draw()},
+  evfilter:el=>{S.evFilter=el.dataset.f;draw()},
+  chatstab:el=>{
+    S.chatsTab=el.dataset.v;
+    if(S.chatsTab==='support'){S.chatTaskId=null;if(!S.chatUid&&S.threads[0])S.chatUid=S.threads[0].id}
+    else{S.chatUid=null;if(!S.chatTaskId&&taskThreads()[0])S.chatTaskId=taskThreads()[0].id}
+    const key=S.chatTaskId||S.chatUid;
+    if(key)subChat(S.chatsTab==='support'?S.db.collection('support').doc(key).collection('messages'):S.db.collection('tasks').doc(key).collection('messages'));
+    else {if(S.msgSub){try{S.msgSub()}catch(e){}S.msgSub=null}S.msgs=[]}
+    draw();
+  },
+  task:el=>openTask(el.dataset.id),
+  person:el=>openPerson(el.dataset.id),
+  closeDrawer:()=>closeDrawer(),
+  modalClose:()=>closeModal(),
+  modalOk:()=>{const f=modalOk;if(f){modalOk=null;guard(f)}else closeModal()},
+  noop:()=>{},
+  copyId:el=>{const id=el.dataset.id;if(navigator.clipboard)navigator.clipboard.writeText(id).then(()=>toast('ID скопирован')).catch(()=>toast(id));else toast(id)},
+  openSupport:el=>openSupport(el.dataset.id),
+  openTaskChat:el=>openTaskChat(el.dataset.id),
+  taskchat:el=>openTaskChat(el.dataset.id),
+  refresh:()=>{startSubs();toast('Данные обновляются')},
+
+  check:el=>{const t=T(el.dataset.id);if(!t)return;guard(async()=>{
+    await S.db.collection('tasks').doc(t.id).update({checked:!t.checked});
+    mgrEv(`${t.checked?'Снял отметку «проверено»':'Проверил заказ'} ${tq(t)}`,{taskId:t.id});
+    t.checked=!t.checked;drawTaskDrawer();
+  },t.checked?'Отметка снята':'Заказ проверен')},
+
+  verify:el=>{const p=P(el.dataset.id);if(!p)return;guard(async()=>{
+    await S.db.collection('profiles').doc(p.id).update({verified:!p.verified});
+    mgrEv(`${p.verified?'Снял проверку':'Проверил анкету'}: ${p.name||p.id}`,{targetId:p.id});
+    p.verified=!p.verified;drawPersonDrawer();draw();
+  },p.verified?'Отметка снята':'Исполнитель проверен')},
+
+  block:el=>{const p=P(el.dataset.id);if(!p)return;const b=!p.blocked;
+    confirmDialog(b?'Заблокировать пользователя?':'Разблокировать пользователя?',b?`${p.name||p.id} потеряет доступ к платформе.`:`${p.name||p.id} снова сможет пользоваться платформой.`,b?'Заблокировать':'Разблокировать',async()=>{
+      await S.db.collection('profiles').doc(p.id).update({blocked:b,blockedAt:b?Date.now():null});
+      mgrEv(`${b?'Заблокировал':'Разблокировал'}: ${p.name||p.id}`,{targetId:p.id});
+      p.blocked=b;p.blockedAt=b?Date.now():null;closeModal();drawPersonDrawer();draw();toast(b?'Пользователь заблокирован':'Пользователь разблокирован');
+    },b)},
+
+  done:el=>{const t=T(el.dataset.id);if(!t)return;
+    confirmDialog('Отметить заказ выполненным?',`${tq(t)} · исполнитель ${nameOf(t.executorId,'—')}. Начислим доход платформы ${fmtPrice(feeFor(t))}.`,'Отметить выполненным',async()=>{
+      const b=S.db.batch();
+      b.update(S.db.collection('tasks').doc(t.id),{status:'done',doneAt:Date.now(),fee:feeFor(t),feeMode:S.cfg.mode,checked:true});
+      b.set(S.db.collection('reviews').doc(t.id),{executorId:t.executorId,customerId:t.customerId,rating:0,text:'',category:t.category||'',customerName:t.customerName||nameOf(t.customerId),at:Date.now()},{merge:true});
+      await b.commit();
+      mgrEv(`Отметил выполненным ${tq(t)}`,{taskId:t.id});
+      closeModal();drawTaskDrawer();draw();toast('Заказ отмечен выполненным');
+    })},
+
+  unbook:el=>reasonDialog('unbook',el.dataset.id),
+  cancel:el=>reasonDialog('cancel',el.dataset.id),
+  reopen:el=>{const t=T(el.dataset.id);if(!t)return;
+    confirmDialog('Вернуть заказ в работу?','Заказ снова начнёт ждать предложений, исполнитель будет снят.','Вернуть в работу',async()=>{
+      await S.db.collection('tasks').doc(t.id).update({...unbook,cancelledAt:null,cancelReason:null,doneAt:null});
+      mgrEv(`Вернул в работу ${tq(t)}`,{taskId:t.id});
+      closeModal();drawTaskDrawer();draw();toast('Заказ снова ждёт предложений');
+    })},
+
+  assignOpen:el=>assignDialog(el.dataset.id),
+  assignOffer:el=>{
+    const t=T(el.dataset.id);if(!t)return;
+    const o=(S.offers||[]).find(x=>x.executorId===el.dataset.e);if(!o)return toast('Предложение больше не действует',true);
+    const date=o.date||t.date,time=o.time||t.time;
+    if(!date){toast('В предложении нет даты — назначьте вручную',true);return}
+    confirmDialog('Назначить исполнителя?',`${nameOf(o.executorId,'Исполнитель')} за ${fmtPrice(o.price)} на ${fmtDate(date)}, ${time||'—'}.`,'Назначить',async()=>{
+      await assignToTask(t.id,o.executorId,o.price,date,time||'10:00');
+      mgrEv(`Назначил ${nameOf(o.executorId)} за ${fmtPrice(o.price)} ${tq(t)}`,{taskId:t.id,targetId:o.executorId});
+      closeModal();drawTaskDrawer();draw();toast('Исполнитель назначен');
+    });
+  },
+
+  money:()=>moneyDialog(),
+  signout:()=>S.auth.signOut()
+};
+
+/* ---------- forms (modal + chat) ---------- */
+document.addEventListener('submit',async e=>{
+  const f=e.target;
+
+  if(f.dataset.chatForm){
+    e.preventDefault();
+    const ta=f.querySelector('textarea[name=text]');if(!ta)return;
+    const text=ta.value.trim();if(!text)return;
+    const btn=f.querySelector('[type=submit]');btn.disabled=true;
+    const kind=f.dataset.kind,id=f.dataset.id,now=Date.now();
+    try{
+      if(kind==='support'){
+        const ref=S.db.collection('support').doc(id);
+        await ref.collection('messages').add({authorId:S.uid,text,createdAt:now});
+        await ref.set({lastAt:now,lastText:text.slice(0,140),lastFrom:S.uid},{merge:true});
+        mgrEv(`Ответил в поддержке ${nameOf(id)}: ${text.slice(0,120)}`,{targetId:id});
+      }else{
+        const ref=S.db.collection('tasks').doc(id);
+        await ref.collection('messages').add({authorId:S.uid,text,createdAt:now});
+        await ref.update({lastMsgAt:now,lastMsgFrom:S.uid});
+        mgrEv(`Написал в чат заказа: ${text.slice(0,120)}`,{taskId:id});
+      }
+      ta.value='';ta.style.height='42px';S.chatDraft='';
+    }catch(x){console.warn(x);toast('Сообщение не отправилось',true)}
+    finally{btn.disabled=false}
+    return;
+  }
+
+  if(f.id==='reasonForm'){
+    e.preventDefault();
+    const kind=f.dataset.kind,id=f.dataset.id,t=T(id);if(!t)return;
+    const why=f.why.value,note=f.note.value.trim();
+    const full=[why,note].filter(Boolean).join('. ');
+    const err=f.querySelector('.err'),btn=f.querySelector('[type=submit]');
+    err.textContent='';btn.disabled=true;
+    try{
+      if(kind==='cancel'){
+        await S.db.collection('tasks').doc(id).update({status:'cancelled',cancelledAt:Date.now(),cancelReason:'Снят оператором: '+full});
+        mgrEv(`Снял заказ: ${full} ${tq(t)}`,{taskId:id});
+        closeModal();drawTaskDrawer();draw();toast('Заказ снят');
+      }else{
+        await S.db.collection('tasks').doc(id).update({...unbook,rejectedIds:FV().arrayUnion(t.executorId)});
+        mgrEv(`Снял исполнителя ${nameOf(t.executorId)} ${tq(t)}`,{taskId:id,targetId:t.executorId});
+        closeModal();drawTaskDrawer();draw();toast('Исполнитель снят, заказ снова ждёт предложений');
+      }
+    }catch(x){console.warn(x);err.textContent='Не получилось. Попробуйте ещё раз'}
+    finally{btn.disabled=false}
+    return;
+  }
+
+  if(f.id==='assignForm'){
+    e.preventDefault();
+    const id=f.dataset.id,t=T(id),err=f.querySelector('.err'),btn=f.querySelector('[type=submit]');
+    const executor=f.executor.value,price=Math.round(Number(f.price.value));
+    err.textContent='';
+    if(!executor){err.textContent='Выберите исполнителя';return}
+    if(!(price>0)){err.textContent='Укажите цену';return}
+    if(!f.date.value||!f.time.value){err.textContent='Укажите дату и время';return}
+    btn.disabled=true;
+    try{
+      await assignToTask(id,executor,price,f.date.value,f.time.value);
+      mgrEv(`Назначил ${nameOf(executor)} за ${fmtPrice(price)} ${tq(t)}`,{taskId:id,targetId:executor});
+      closeModal();drawTaskDrawer();draw();toast('Исполнитель назначен');
+    }catch(x){console.warn(x);err.textContent=(x&&x.code==='permission-denied')?'Нет прав на это действие':'Не получилось. Попробуйте ещё раз'}
+    finally{btn.disabled=false}
+    return;
+  }
+
+  if(f.id==='moneyForm'){
+    e.preventDefault();
+    const mode=f.fmode.value,share=Number(f.share.value),percent=Number(f.percent.value),err=f.querySelector('.err'),btn=f.querySelector('[type=submit]');
+    err.textContent='';
+    if(!(share>=0&&share<=100&&percent>=0&&percent<=100)){err.textContent='Проценты — от 0 до 100';return}
+    btn.disabled=true;
+    try{
+      await S.db.collection('config').doc('money').set({mode,share,percent,updatedAt:Date.now()});
+      S.cfg={mode,share,percent};
+      mgrEv('Изменил условия дохода: '+cfgText({mode,share,percent}));
+      closeModal();draw();toast('Условия сохранены');
+    }catch(x){console.warn(x);err.textContent='Не получилось сохранить (нужны права оператора)'}
+    finally{btn.disabled=false}
+  }
+});
+
+/* ---------- clicks ---------- */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const a=el.dataset.act;
+  if(a==='noop')return;
+  const fn=ACT[a];if(!fn)return;
+  if(el.tagName!=='A')e.preventDefault();
+  if(a!=='check'&&a!=='verify'&&a!=='refresh')el.blur&&el.blur();
+  fn(el);
+});
+
+/* ---------- search ---------- */
+document.addEventListener('input',e=>{
+  const id=e.target.id;
+  if(id==='chatText'){S.chatDraft=e.target.value;return}
+  if(id==='tasksSearch'){S.tasksQ=e.target.value;renderTasksList()}
+  else if(id==='peopleSearch'){S.peopleQ=e.target.value;renderPeopleList()}
+  else if(id==='eventsSearch'){S.evQ=e.target.value;renderEventsList()}
+  else if(id==='globalSearch'){
+    const v=e.target.value;
+    if(S.tab==='people'){S.peopleQ=v;const x=$('#peopleSearch');if(x)x.value=v;renderPeopleList()}
+    else if(S.tab==='events'){S.evQ=v;const x=$('#eventsSearch');if(x)x.value=v;renderEventsList()}
+    else if(S.tab==='chats'){/* no list search */ }
+    else{S.tasksQ=v;const x=$('#tasksSearch');if(x)x.value=v;if(S.tab!=='tasks')go('tasks');else renderTasksList()}
+  }
+});
+$('#globalSearch').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const v=e.target.value;if(S.tab!=='tasks')go('tasks',{tasksQ:v});else renderTasksList()}
+});
+
+/* ---------- keyboard ---------- */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if($('#modalHost').innerHTML){closeModal();return}
+    if($('#drawerHost').innerHTML){closeDrawer();return}
+    $('#sidebar').classList.remove('open');
+  }
+  if(e.key==='Enter'&&!e.shiftKey&&e.target.id==='chatText'){
+    e.preventDefault();
+    const f=e.target.closest('form');if(f)f.requestSubmit();
+  }
+});
+
+/* ---------- top bar ---------- */
+$('#burger').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+$('#refreshBtn').addEventListener('click',()=>{startSubs();toast('Данные обновляются')});
+$('#bellBtn').addEventListener('click',()=>{
+  const A=attention();
+  if(!A.length)return toast('Срочных дел нет');
+  go(A[0].go,A[0].filter?{tasksFilter:A[0].filter}:A[0].ptab?{peopleTab:A[0].ptab}:{});
+});
+$('#avatarTop').addEventListener('click',()=>{if(S.uid)openPerson(S.uid)});
+$('#logoutBtn').addEventListener('click',()=>confirmDialog('Выйти из панели?','Придётся снова войти по номеру и паролю.','Выйти',async()=>{closeModal();await S.auth.signOut()},true));
+
+/* ---------- drawer sync ---------- */
+function resubLive(){
+  if(S.chatTaskId&&T(S.chatTaskId))subChat(S.db.collection('tasks').doc(S.chatTaskId).collection('messages'));
+  else if(S.chatUid&&S.tab==='chats')subChat(S.db.collection('support').doc(S.chatUid).collection('messages'));
+  if(S.openTaskId&&T(S.openTaskId))subOffers(S.openTaskId);
+}
+function syncDrawer(){
+  const host=$('#drawerHost');if(!host||!host.innerHTML)return;
+  const ae=document.activeElement;if(ae&&ae.closest&&ae.closest('.drawer'))return;
+  const body=host.querySelector('.drawer-b');const top=body?body.scrollTop:0;
+  if(S.openTaskId&&T(S.openTaskId))drawTaskDrawer();
+  else if(S.openPersonId&&P(S.openPersonId))drawPersonDrawer();
+  const b2=host.querySelector('.drawer-b');if(b2)b2.scrollTop=top;
+}
+function afterDraw(){
+  if(S.tab!=='chats'){syncDrawer();return}
+  const box=$('#chatMsgs');
+  if(box)box.scrollTop=box.scrollHeight;
+  syncDrawer();
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+function boot(){
+  if(!window.firebase){$('#boot').innerHTML='<div style="max-width:420px;text-align:center;line-height:1.6">Не удалось загрузить Firebase.<br>Проверьте интернет и обновите страницу.</div>';return}
+  firebase.initializeApp(CFG);
+  S.db=firebase.firestore();S.auth=firebase.auth();
+  S.auth.onAuthStateChanged(async u=>{
+    if(S.creating)return;
+    stopSubs();S.ready=false;S.uid=null;S.msgs=[];S.offers=[];
+    if(S.msgSub){try{S.msgSub()}catch(e){}S.msgSub=null}
+    if(S.offerSub){try{S.offerSub()}catch(e){}S.offerSub=null}
+    $('#drawerHost').innerHTML='';$('#modalHost').innerHTML='';
+    if(!u){showAuth('login');return}
+    S.uid=u.uid;
+    showBoot('Проверяем доступ оператора…');
+    let ok=false;
+    try{ok=await checkMgr(u.uid)}catch(e){console.warn(e)}
+    if(!ok){
+      $('#actPhone').textContent=(u.email||'').replace('@barnabas-users.app','');
+      showAuth('activate');return;
+    }
+    try{
+      const [pr,meP]=await Promise.all([S.db.collection('private').doc(u.uid).get(),S.db.collection('profiles').doc(u.uid).get()]);
+      if(pr.exists)S.privs[u.uid]=pr.data();
+      if(meP.exists)S.profiles[u.uid]={id:meP.id,...meP.data()};
+    }catch(e){console.warn(e)}
+    enterApp();
+  },e=>{console.warn(e);$('#boot').innerHTML='<div style="max-width:420px;text-align:center;line-height:1.6">Не удалось подключиться к Firebase.<br>Проверьте интернет и обновите страницу.</div>'});
+}
+boot();
+
+</script>
+</body>
+</html>
