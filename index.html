@@ -6,6 +6,7 @@
 <title>Барнабас</title>
 <meta name="theme-color" content="#F2F3F5">
 <link rel="icon" href="data:,">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>try{var t=localStorage.getItem("barnabas_theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
@@ -574,6 +575,8 @@ const TABS={
  manager:[['stats','Обзор','chart'],['tasks','Заказы','list'],['events','Лента','pulse'],['people','Люди','users'],['chats','Чаты','chat']]
 };
 const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,String(v))}catch(e){return null}};
+const TG=window.Telegram&&window.Telegram.WebApp;
+if(TG){try{TG.ready();TG.expand();if(TG.setHeaderColor)TG.setHeaderColor(document.documentElement.dataset.theme==='dark'?'#111827':'#F2F3F5');TG.BackButton.onClick(()=>pop())}catch(e){}}
 const S={db:null,auth:null,uid:null,mgrOk:false,mgrSeq:0,registering:false,unsubs:[],roleUnsubs:[],taskRole:null,tq:{},tasks:[],prevT:null,
   ready:{me:false,t:false,c:false},profiles:{},privs:{},profReq:{},reviewsBy:{},cfg:{...DEF_CFG},
   offerSubs:{},offersBy:{},offerSeen:{},sup:{mode:null},chat:{subs:{},by:{}},evSubs:{},evBy:{},secret:{},photoCache:{},drafts:{},
